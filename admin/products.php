@@ -627,22 +627,22 @@ include 'includes/header.php';
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 
-                <div class="modal-body">
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                     <!-- Nav Tabs -->
-                    <ul class="nav nav-tabs mb-3" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#basicInfo">Basic Information</a>
+                    <ul class="nav nav-tabs mb-3" role="tablist" style="flex-wrap: nowrap; overflow-x: auto;">
+                        <li class="nav-item" style="white-space: nowrap;">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#basicInfo">Basic Info</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#colorInfo">Color Details</a>
+                        <li class="nav-item" style="white-space: nowrap;">
+                            <a class="nav-link" data-bs-toggle="tab" href="#colorInfo">Color</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#technicalInfo">Technical Specs</a>
+                        <li class="nav-item" style="white-space: nowrap;">
+                            <a class="nav-link" data-bs-toggle="tab" href="#technicalInfo">Tech Specs</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-bs-toggle="tab" href="#mediaInfo">Media & Files</a>
+                        <li class="nav-item" style="white-space: nowrap;">
+                            <a class="nav-link" data-bs-toggle="tab" href="#mediaInfo">Media</a>
                         </li>
-                        <li class="nav-item">
+                        <li class="nav-item" style="white-space: nowrap;">
                             <a class="nav-link" data-bs-toggle="tab" href="#seoInfo">SEO</a>
                         </li>
                     </ul>
@@ -968,6 +968,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Image preview functionality
+    const imageInput = document.getElementById('image');
+    const imagePreview = document.getElementById('imagePreview');
+    
+    if (imageInput && imagePreview) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imagePreview.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.style.display = 'none';
+            }
+        });
+    }
 });
 
 function resetForm() {
@@ -1056,8 +1076,10 @@ function editProduct(productId) {
             // Show current image
             if (product.image) {
                 const preview = document.getElementById('imagePreview');
-                preview.src = '<?php echo PRODUCT_UPLOAD_DIR; ?>' + product.image;
+                preview.src = 'uploads/products/' + product.image;
                 preview.style.display = 'block';
+            } else {
+                document.getElementById('imagePreview').style.display = 'none';
             }
             
             // Show PDF indicators

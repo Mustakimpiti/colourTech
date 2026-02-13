@@ -1,6 +1,7 @@
 <?php
 /**
  * ColourTech Industries - Sub-Categories Management
+ * WITH MULTIPLE IMAGE UPLOAD SUPPORT
  */
 
 session_start();
@@ -151,36 +152,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('sub-categories.php');
     }
     
-    // Upload Image
-    if (isset($_POST['action']) && $_POST['action'] === 'upload_image') {
+    // Upload Multiple Images
+    if (isset($_POST['action']) && $_POST['action'] === 'upload_images') {
         $sub_category_id = (int)($_POST['sub_category_id'] ?? 0);
         
-        if ($sub_category_id && isset($_FILES['image'])) {
-            $uploadResult = uploadImage($_FILES['image'], SUBCATEGORY_UPLOAD_DIR, 'subcat_');
+        if ($sub_category_id && isset($_FILES['images'])) {
+            $uploadedCount = 0;
+            $errorCount = 0;
+            $errors = [];
             
-            if ($uploadResult['success']) {
-                // Get current image count
-                $stmt = $pdo->prepare("SELECT COUNT(*) FROM sub_category_images WHERE sub_category_id = ?");
-                $stmt->execute([$sub_category_id]);
-                $count = $stmt->fetchColumn();
-                
-                // Insert image
-                $stmt = $pdo->prepare("
-                    INSERT INTO sub_category_images (sub_category_id, image_path, sort_order, is_primary) 
-                    VALUES (?, ?, ?, ?)
-                ");
-                $stmt->execute([
-                    $sub_category_id,
-                    $uploadResult['filename'],
-                    $count + 1,
-                    $count == 0 ? 1 : 0 // First image is primary
-                ]);
-                
-                logActivity($_SESSION['admin_id'], 'created', 'sub_category_images', $pdo->lastInsertId(), "Uploaded image for sub-category ID: $sub_category_id");
-                setFlashMessage('success', 'Image uploaded successfully!');
-            } else {
-                setFlashMessage('error', $uploadResult['message']);
+            // Get current image count for sort order
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM sub_category_images WHERE sub_category_id = ?");
+            $stmt->execute([$sub_category_id]);
+            $count = $stmt->fetchColumn();
+            
+            // Check if first image will be primary
+            $isFirstImage = ($count == 0);
+            
+            // Loop through each uploaded file
+            $fileCount = count($_FILES['images']['name']);
+            
+            for ($i = 0; $i < $fileCount; $i++) {
+                // Check if file was uploaded
+                if ($_FILES['images']['error'][$i] === UPLOAD_ERR_OK) {
+                    // Create a single file array for the uploadImage function
+                    $singleFile = [
+                        'name' => $_FILES['images']['name'][$i],
+                        'type' => $_FILES['images']['type'][$i],
+                        'tmp_name' => $_FILES['images']['tmp_name'][$i],
+                        'error' => $_FILES['images']['error'][$i],
+                        'size' => $_FILES['images']['size'][$i]
+                    ];
+                    
+                    $uploadResult = uploadImage($singleFile, SUBCATEGORY_UPLOAD_DIR, 'subcat_');
+                    
+                    if ($uploadResult['success']) {
+                        // Insert image
+                        $stmt = $pdo->prepare("
+                            INSERT INTO sub_category_images (sub_category_id, image_path, sort_order, is_primary) 
+                            VALUES (?, ?, ?, ?)
+                        ");
+                        $stmt->execute([
+                            $sub_category_id,
+                            $uploadResult['filename'],
+                            $count + $i + 1,
+                            ($isFirstImage && $i == 0) ? 1 : 0 // Only first image of first upload is primary
+                        ]);
+                        
+                        $uploadedCount++;
+                    } else {
+                        $errorCount++;
+                        $errors[] = $_FILES['images']['name'][$i] . ': ' . $uploadResult['message'];
+                    }
+                } elseif ($_FILES['images']['error'][$i] !== UPLOAD_ERR_NO_FILE) {
+                    $errorCount++;
+                    $errors[] = $_FILES['images']['name'][$i] . ': Upload error';
+                }
             }
+            
+            // Build success/error message
+            $messages = [];
+            if ($uploadedCount > 0) {
+                $messages[] = "$uploadedCount image(s) uploaded successfully!";
+                logActivity($_SESSION['admin_id'], 'created', 'sub_category_images', $sub_category_id, "Uploaded $uploadedCount images for sub-category ID: $sub_category_id");
+            }
+            if ($errorCount > 0) {
+                $messages[] = "$errorCount image(s) failed to upload.";
+                if (!empty($errors)) {
+                    $messages[] = implode('<br>', $errors);
+                }
+            }
+            
+            $messageType = ($errorCount > 0 && $uploadedCount == 0) ? 'error' : (($errorCount > 0) ? 'warning' : 'success');
+            setFlashMessage($messageType, implode('<br>', $messages));
         }
         
         redirect('sub-categories.php');
@@ -441,19 +485,21 @@ include 'includes/header.php';
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <!-- Upload Form -->
+                <!-- Upload Form - UPDATED FOR MULTIPLE FILES -->
                 <form method="POST" enctype="multipart/form-data" class="mb-4">
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                    <input type="hidden" name="action" value="upload_image">
+                    <input type="hidden" name="action" value="upload_images">
                     <input type="hidden" name="sub_category_id" id="uploadSubCategoryId">
                     
                     <div class="input-group">
-                        <input type="file" class="form-control" name="image" accept="image/*" required>
+                        <input type="file" class="form-control" name="images[]" accept="image/*" multiple required>
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-upload me-2"></i>Upload Image
+                            <i class="fas fa-upload me-2"></i>Upload Images
                         </button>
                     </div>
-                    <small class="text-muted">Max size: 5MB (JPG, PNG, GIF, WebP)</small>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> You can select multiple images at once (Hold Ctrl/Cmd). Max size: 5MB per image (JPG, PNG, GIF, WebP)
+                    </small>
                 </form>
                 
                 <!-- Images Grid -->

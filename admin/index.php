@@ -77,7 +77,7 @@ include 'includes/header.php';
             </a>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="stats-card">
             <div class="stats-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
@@ -90,7 +90,7 @@ include 'includes/header.php';
             </a>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="stats-card">
             <div class="stats-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
@@ -103,7 +103,7 @@ include 'includes/header.php';
             </a>
         </div>
     </div>
-    
+
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="stats-card">
             <div class="stats-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
@@ -146,19 +146,23 @@ include 'includes/header.php';
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <?php if ($product['color_code']): ?>
-                                                    <div style="width: 30px; height: 30px; background: <?php echo $product['color_code']; ?>; border-radius: 5px; margin-right: 10px; border: 1px solid #ddd;"></div>
+                                                    <div
+                                                        style="width: 30px; height: 30px; background: <?php echo $product['color_code']; ?>; border-radius: 5px; margin-right: 10px; border: 1px solid #ddd;">
+                                                    </div>
                                                 <?php endif; ?>
                                                 <div>
                                                     <strong><?php echo htmlspecialchars($product['name']); ?></strong>
                                                     <?php if ($product['product_code']): ?>
-                                                        <br><small class="text-muted"><?php echo htmlspecialchars($product['product_code']); ?></small>
+                                                        <br><small
+                                                            class="text-muted"><?php echo htmlspecialchars($product['product_code']); ?></small>
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
                                             <small><?php echo htmlspecialchars($product['category_name']); ?></small><br>
-                                            <small class="text-muted"><?php echo htmlspecialchars($product['sub_category_name']); ?></small>
+                                            <small
+                                                class="text-muted"><?php echo htmlspecialchars($product['sub_category_name']); ?></small>
                                         </td>
                                         <td><?php echo getStatusBadge($product['status']); ?></td>
                                         <td><small><?php echo formatDate($product['created_at']); ?></small></td>
@@ -171,7 +175,7 @@ include 'includes/header.php';
             </div>
         </div>
     </div>
-    
+
     <!-- Recent Inquiries -->
     <div class="col-lg-6 mb-4">
         <div class="card">
@@ -199,7 +203,8 @@ include 'includes/header.php';
                                         <td>
                                             <strong><?php echo htmlspecialchars($inquiry['name']); ?></strong>
                                             <?php if ($inquiry['subject']): ?>
-                                                <br><small class="text-muted"><?php echo truncateText($inquiry['subject'], 30); ?></small>
+                                                <br><small
+                                                    class="text-muted"><?php echo truncateText($inquiry['subject'], 30); ?></small>
                                             <?php endif; ?>
                                         </td>
                                         <td><small><?php echo htmlspecialchars($inquiry['email']); ?></small></td>
@@ -244,10 +249,10 @@ include 'includes/header.php';
                                     <tr>
                                         <td><?php echo htmlspecialchars($log['admin_name'] ?? 'System'); ?></td>
                                         <td>
-                                            <span class="badge bg-<?php 
-                                                echo $log['action'] === 'created' ? 'success' : 
-                                                    ($log['action'] === 'updated' ? 'info' : 
-                                                    ($log['action'] === 'deleted' ? 'danger' : 'secondary')); 
+                                            <span class="badge bg-<?php
+                                            echo $log['action'] === 'created' ? 'success' :
+                                                ($log['action'] === 'updated' ? 'info' :
+                                                    ($log['action'] === 'deleted' ? 'danger' : 'secondary'));
                                             ?>">
                                                 <?php echo ucfirst($log['action']); ?>
                                             </span>

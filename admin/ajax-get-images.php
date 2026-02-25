@@ -16,7 +16,7 @@ if (!isLoggedIn()) {
 }
 
 // Get sub-category ID
-$subCategoryId = isset($_GET['sub_category_id']) ? (int)$_GET['sub_category_id'] : 0;
+$subCategoryId = isset($_GET['sub_category_id']) ? (int) $_GET['sub_category_id'] : 0;
 
 if (!$subCategoryId) {
     echo json_encode(['error' => 'Invalid sub-category ID']);
@@ -32,10 +32,10 @@ try {
     ");
     $stmt->execute([$subCategoryId]);
     $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
     // Return images data
     echo json_encode(['images' => $images]);
-    
+
 } catch (PDOException $e) {
     echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
 }

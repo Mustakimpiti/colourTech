@@ -16,7 +16,7 @@ if (!isLoggedIn()) {
 }
 
 // Get product ID
-$productId = isset($_GET['product_id']) ? (int)$_GET['product_id'] : 0;
+$productId = isset($_GET['product_id']) ? (int) $_GET['product_id'] : 0;
 
 if (!$productId) {
     echo json_encode(['error' => 'Invalid product ID']);
@@ -32,10 +32,10 @@ try {
     ");
     $stmt->execute([$productId]);
     $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
     // Return images data
     echo json_encode(['images' => $images]);
-    
+
 } catch (PDOException $e) {
     echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
 }

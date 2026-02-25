@@ -564,7 +564,7 @@ h1-70, .h1-70 {
 }
 
 h2, .h2 {
-  font-size: var(--rr-fs-h2);
+  font-size: 36px;
   line-height: var(--rr-lh-h2);
 }
 @media only screen and (min-width: 992px) and (max-width: 1199px), only screen and (min-width: 768px) and (max-width: 991px), only screen and (min-width: 576px) and (max-width: 767px) {
@@ -7816,7 +7816,7 @@ body .ui-tooltip {
 .main-menu ul li .mega-menu {
   position: absolute;
   top: 100%;
-  left: 42.5%;
+  left: 52.5%;
   padding: 30px 35px 30px;
   background: #0d0d0d;
   visibility: hidden;
@@ -7854,7 +7854,7 @@ body .ui-tooltip {
           column-gap: 30px;
   -ms-grid-columns: 1fr 30px 1fr 30px 1fr;
   grid-template-columns: repeat(3, 1fr);
-  width: 950px;
+  width: 100%;
   margin: 0 auto;
   -ms-flex-pack: distribute;
       justify-content: space-around;
@@ -7888,7 +7888,7 @@ body .ui-tooltip {
   margin-bottom: 0;
 }
 .main-menu ul li .mega-menu li ul li a {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--rr-text-body);
   padding: 0;
   position: relative;
@@ -8222,7 +8222,7 @@ body .ui-tooltip {
   color: var(--rr-common-white);
   border-top: 1px solid rgba(255, 255, 255, 0.079);
   font-size: 16px;
-  line-height: 1.5;
+  line-height: 1.25;
   font-weight: 500;
 }
 .mean-container .mean-nav ul li a:hover, .mean-container .mean-nav ul li span:hover {
@@ -13480,7 +13480,7 @@ body .ui-tooltip {
   }
 }
 .contact__form-input {
-  margin-bottom: 30px;
+  margin-bottom: 10px;
 }
 .contact__form-input input, .contact__form-input textarea {
   height: 50px;
@@ -13516,7 +13516,7 @@ body .ui-tooltip {
   color: var(--rr-text-body);
 }
 .contact__form-input textarea {
-  height: 180px;
+  height: 100px;
 }
 @media (max-width: 575px) {
   .contact__form-input textarea {
@@ -14774,6 +14774,7 @@ body .ui-tooltip {
   position: relative;
   overflow: hidden;
   max-width: 410px;
+  border-radius: 10px;
 }
 .projects__item .has--overlay {
   background-color: rgba(8, 10, 11, 0.7);

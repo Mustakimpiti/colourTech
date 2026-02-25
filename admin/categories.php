@@ -12,32 +12,32 @@ $breadcrumbs = ['Categories' => ''];
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    
+
     // Add/Edit Category
     if (isset($_POST['action']) && in_array($_POST['action'], ['add', 'edit'])) {
-        
+
         if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
             setFlashMessage('error', 'Invalid security token.');
             redirect('categories.php');
         }
-        
-        $id = isset($_POST['id']) ? (int)$_POST['id'] : null;
+
+        $id = isset($_POST['id']) ? (int) $_POST['id'] : null;
         $name = sanitize($_POST['name'] ?? '');
         $slug = sanitize($_POST['slug'] ?? '');
         $description = sanitize($_POST['description'] ?? '');
-        $sort_order = (int)($_POST['sort_order'] ?? 0);
+        $sort_order = (int) ($_POST['sort_order'] ?? 0);
         $status = sanitize($_POST['status'] ?? 'active');
         $meta_title = sanitize($_POST['meta_title'] ?? '');
         $meta_description = sanitize($_POST['meta_description'] ?? '');
         $meta_keywords = sanitize($_POST['meta_keywords'] ?? '');
-        
+
         // Validation
         $errors = [];
-        
+
         if (empty($name)) {
             $errors[] = 'Category name is required.';
         }
-        
+
         if (empty($slug)) {
             $slug = generateUniqueSlug('categories', $name, $id);
         } else {
@@ -45,15 +45,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors[] = 'Slug already exists. Please use a different slug.';
             }
         }
-        
+
         // Handle image upload
         $imagePath = '';
         if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
             $uploadResult = uploadImage($_FILES['image'], CATEGORY_UPLOAD_DIR, 'cat_');
-            
+
             if ($uploadResult['success']) {
                 $imagePath = $uploadResult['filename'];
-                
+
                 // Delete old image if editing
                 if ($id && !empty($_POST['old_image'])) {
                     deleteFile(CATEGORY_UPLOAD_DIR . $_POST['old_image']);
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $imagePath = $_POST['old_image'];
             }
         }
-        
+
         if (empty($errors)) {
             try {
                 if ($_POST['action'] === 'add') {
@@ -77,17 +77,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         (name, slug, description, image, sort_order, meta_title, meta_description, meta_keywords, status) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ");
-                    
+
                     $stmt->execute([
-                        $name, $slug, $description, $imagePath, $sort_order,
-                        $meta_title, $meta_description, $meta_keywords, $status
+                        $name,
+                        $slug,
+                        $description,
+                        $imagePath,
+                        $sort_order,
+                        $meta_title,
+                        $meta_description,
+                        $meta_keywords,
+                        $status
                     ]);
-                    
+
                     $categoryId = $pdo->lastInsertId();
-                    
+
                     logActivity($_SESSION['admin_id'], 'created', 'categories', $categoryId, "Created category: $name");
                     setFlashMessage('success', 'Category added successfully!');
-                    
+
                 } else {
                     // Update existing category
                     $stmt = $pdo->prepare("
@@ -96,58 +103,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             meta_title = ?, meta_description = ?, meta_keywords = ?, status = ?
                         WHERE id = ?
                     ");
-                    
+
                     $stmt->execute([
-                        $name, $slug, $description, $imagePath, $sort_order,
-                        $meta_title, $meta_description, $meta_keywords, $status, $id
+                        $name,
+                        $slug,
+                        $description,
+                        $imagePath,
+                        $sort_order,
+                        $meta_title,
+                        $meta_description,
+                        $meta_keywords,
+                        $status,
+                        $id
                     ]);
-                    
+
                     logActivity($_SESSION['admin_id'], 'updated', 'categories', $id, "Updated category: $name");
                     setFlashMessage('success', 'Category updated successfully!');
                 }
-                
+
                 redirect('categories.php');
-                
+
             } catch (PDOException $e) {
                 $errors[] = 'Database error: ' . $e->getMessage();
             }
         }
-        
+
         if (!empty($errors)) {
             setFlashMessage('error', implode('<br>', $errors));
         }
     }
-    
+
     // Delete Category
     if (isset($_POST['action']) && $_POST['action'] === 'delete') {
         if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
             setFlashMessage('error', 'Invalid security token.');
             redirect('categories.php');
         }
-        
-        $id = (int)($_POST['id'] ?? 0);
-        
+
+        $id = (int) ($_POST['id'] ?? 0);
+
         if ($id) {
             // Get category info before deleting
             $stmt = $pdo->prepare("SELECT * FROM categories WHERE id = ?");
             $stmt->execute([$id]);
             $category = $stmt->fetch();
-            
+
             if ($category) {
                 // Delete image file
                 if (!empty($category['image'])) {
                     deleteFile(CATEGORY_UPLOAD_DIR . $category['image']);
                 }
-                
+
                 // Delete category (cascades to sub-categories and products)
                 $stmt = $pdo->prepare("DELETE FROM categories WHERE id = ?");
                 $stmt->execute([$id]);
-                
+
                 logActivity($_SESSION['admin_id'], 'deleted', 'categories', $id, "Deleted category: " . $category['name']);
                 setFlashMessage('success', 'Category deleted successfully!');
             }
         }
-        
+
         redirect('categories.php');
     }
 }
@@ -202,11 +217,12 @@ include 'includes/header.php';
                             <td><?php echo $index + 1; ?></td>
                             <td>
                                 <?php if (!empty($category['image'])): ?>
-                                    <img src="<?php echo CATEGORY_UPLOAD_DIR . $category['image']; ?>" 
-                                         alt="<?php echo htmlspecialchars($category['name']); ?>" 
-                                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
+                                    <img src="<?php echo CATEGORY_UPLOAD_DIR . $category['image']; ?>"
+                                        alt="<?php echo htmlspecialchars($category['name']); ?>"
+                                        style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">
                                 <?php else: ?>
-                                    <div style="width: 50px; height: 50px; background: #f0f0f0; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
+                                    <div
+                                        style="width: 50px; height: 50px; background: #f0f0f0; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
                                         <i class="fas fa-image text-muted"></i>
                                     </div>
                                 <?php endif; ?>
@@ -214,7 +230,8 @@ include 'includes/header.php';
                             <td>
                                 <strong><?php echo htmlspecialchars($category['name']); ?></strong>
                                 <?php if ($category['description']): ?>
-                                    <br><small class="text-muted"><?php echo truncateText($category['description'], 50); ?></small>
+                                    <br><small
+                                        class="text-muted"><?php echo truncateText($category['description'], 50); ?></small>
                                 <?php endif; ?>
                             </td>
                             <td><code><?php echo htmlspecialchars($category['slug']); ?></code></td>
@@ -227,10 +244,14 @@ include 'includes/header.php';
                             <td><?php echo $category['sort_order']; ?></td>
                             <td><?php echo getStatusBadge($category['status']); ?></td>
                             <td>
-                                <button class="btn btn-sm btn-info" onclick="editCategory(<?php echo htmlspecialchars(json_encode($category)); ?>)" title="Edit">
+                                <button class="btn btn-sm btn-info"
+                                    onclick="editCategory(<?php echo htmlspecialchars(json_encode($category)); ?>)"
+                                    title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteCategory(<?php echo $category['id']; ?>, '<?php echo htmlspecialchars($category['name']); ?>')" title="Delete">
+                                <button class="btn btn-sm btn-danger"
+                                    onclick="deleteCategory(<?php echo $category['id']; ?>, '<?php echo htmlspecialchars($category['name']); ?>')"
+                                    title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -251,44 +272,47 @@ include 'includes/header.php';
                 <input type="hidden" name="action" id="formAction" value="add">
                 <input type="hidden" name="id" id="categoryId">
                 <input type="hidden" name="old_image" id="oldImage">
-                
+
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add New Category</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                
+
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="name" class="form-label">Category Name *</label>
-                            <input type="text" class="form-control" id="name" name="name" required data-slug-source="true" data-slug-target="slug">
+                            <input type="text" class="form-control" id="name" name="name" required
+                                data-slug-source="true" data-slug-target="slug">
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="slug" class="form-label">Slug *</label>
                             <input type="text" class="form-control" id="slug" name="slug" required>
                             <small class="text-muted">URL-friendly version (auto-generated)</small>
                         </div>
-                        
+
                         <div class="col-12 mb-3">
                             <label for="description" class="form-label">Description</label>
                             <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="image" class="form-label">Category Image</label>
-                            <input type="file" class="form-control" id="image" name="image" accept="image/*" data-preview="imagePreview">
+                            <input type="file" class="form-control" id="image" name="image" accept="image/*"
+                                data-preview="imagePreview">
                             <small class="text-muted">Max size: 5MB (JPG, PNG, GIF, WebP)</small>
                             <div class="mt-2">
-                                <img id="imagePreview" src="" alt="Preview" style="max-width: 200px; max-height: 200px; display: none; border-radius: 5px;">
+                                <img id="imagePreview" src="" alt="Preview"
+                                    style="max-width: 200px; max-height: 200px; display: none; border-radius: 5px;">
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3 mb-3">
                             <label for="sort_order" class="form-label">Sort Order</label>
                             <input type="number" class="form-control" id="sort_order" name="sort_order" value="0">
                         </div>
-                        
+
                         <div class="col-md-3 mb-3">
                             <label for="status" class="form-label">Status</label>
                             <select class="form-select" id="status" name="status">
@@ -296,22 +320,23 @@ include 'includes/header.php';
                                 <option value="inactive">Inactive</option>
                             </select>
                         </div>
-                        
+
                         <div class="col-12">
                             <hr>
                             <h6>SEO Settings (Optional)</h6>
                         </div>
-                        
+
                         <div class="col-12 mb-3">
                             <label for="meta_title" class="form-label">Meta Title</label>
                             <input type="text" class="form-control" id="meta_title" name="meta_title">
                         </div>
-                        
+
                         <div class="col-12 mb-3">
                             <label for="meta_description" class="form-label">Meta Description</label>
-                            <textarea class="form-control" id="meta_description" name="meta_description" rows="2"></textarea>
+                            <textarea class="form-control" id="meta_description" name="meta_description"
+                                rows="2"></textarea>
                         </div>
-                        
+
                         <div class="col-12 mb-3">
                             <label for="meta_keywords" class="form-label">Meta Keywords</label>
                             <input type="text" class="form-control" id="meta_keywords" name="meta_keywords">
@@ -319,7 +344,7 @@ include 'includes/header.php';
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">

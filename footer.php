@@ -86,12 +86,24 @@
                             </div>
                             <div class="footer__link">
                                 <ul>
-                                    <li><a href="#"> <i class="fa-solid fa-angles-right"></i>Paints & Coatings</a></li>
-                                    <li><a href="#"> <i class="fa-solid fa-angles-right"></i>Plastics</a></li>
-                                    <li><a href="#"> <i class="fa-solid fa-angles-right"></i>Rubber</a></li>
-                                    <li><a href="#"> <i class="fa-solid fa-angles-right"></i>Inks & Dyeing</a></li>
-                                    <li><a href="#"> <i class="fa-solid fa-angles-right"></i>PVC Leather</a></li>
-                                    <li><a href="#"> <i class="fa-solid fa-angles-right"></i>Road Marking</a></li>
+                                    <?php
+                                    $footerCatStmt = $pdo->query("
+                    SELECT name, slug 
+                    FROM categories 
+                    WHERE status = 'active' 
+                    ORDER BY sort_order ASC
+                ");
+                                    $footerCats = $footerCatStmt->fetchAll();
+                                    foreach ($footerCats as $fCat):
+                                        $fLink = 'category.php?slug=' . urlencode($fCat['slug']);
+                                        $fName = htmlspecialchars(html_entity_decode($fCat['name']));
+                                        ?>
+                                        <li>
+                                            <a href="<?php echo $fLink; ?>">
+                                                <i class="fa-solid fa-angles-right"></i><?php echo $fName; ?>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
                                 </ul>
                             </div>
                         </div>
@@ -104,6 +116,14 @@
                             </div>
 
                             <div class="footer__contact">
+                                <?php
+                                $contactStmt = $pdo->query("
+                SELECT setting_key, setting_value 
+                FROM site_settings 
+                WHERE setting_key IN ('site_phone_1','site_phone_2','site_email','site_address')
+            ");
+                                $contactInfo = $contactStmt->fetchAll(PDO::FETCH_KEY_PAIR);
+                                ?>
                                 <ul>
                                     <li>
                                         <span class="icon">
@@ -111,8 +131,18 @@
                                         </span>
                                         <span class="text">
                                             <span>Phone Number</span>
-                                            <a href="tel:+912602433771">+91 260 2433771</a>
-                                            <a href="tel:+912602434771">+91 260 2434771</a>
+                                            <?php if (!empty($contactInfo['site_phone_1'])): ?>
+                                                <a
+                                                    href="tel:<?php echo preg_replace('/\s+/', '', $contactInfo['site_phone_1']); ?>">
+                                                    <?php echo htmlspecialchars($contactInfo['site_phone_1']); ?>
+                                                </a>
+                                            <?php endif; ?>
+                                            <?php if (!empty($contactInfo['site_phone_2'])): ?>
+                                                <a
+                                                    href="tel:<?php echo preg_replace('/\s+/', '', $contactInfo['site_phone_2']); ?>">
+                                                    <?php echo htmlspecialchars($contactInfo['site_phone_2']); ?>
+                                                </a>
+                                            <?php endif; ?>
                                         </span>
                                     </li>
                                     <li>
@@ -121,7 +151,12 @@
                                         </span>
                                         <span class="text">
                                             <span>Email Address</span>
-                                            <a href="mailto:colourtechvapi@gmail.com">colourtechvapi@gmail.com</a>
+                                            <?php if (!empty($contactInfo['site_email'])): ?>
+                                                <a
+                                                    href="mailto:<?php echo htmlspecialchars($contactInfo['site_email']); ?>">
+                                                    <?php echo htmlspecialchars($contactInfo['site_email']); ?>
+                                                </a>
+                                            <?php endif; ?>
                                         </span>
                                     </li>
                                     <li class="address">
@@ -130,9 +165,11 @@
                                         </span>
                                         <span class="text">
                                             <span>Location</span>
-                                            <a target="_blank" href="https://maps.app.goo.gl/a44JWUKtQt5iXZ5F7">Plot No.
-                                                Ex. 12, Opp. CETP, 1st Phase G.I.D.C, Vapi - 396 195 Valsad
-                                                Dist.,(Gujarat), India.</a>
+                                            <?php if (!empty($contactInfo['site_address'])): ?>
+                                                <a target="_blank" href="https://maps.app.goo.gl/a44JWUKtQt5iXZ5F7">
+                                                    <?php echo htmlspecialchars($contactInfo['site_address']); ?>
+                                                </a>
+                                            <?php endif; ?>
                                         </span>
                                     </li>
                                 </ul>
@@ -148,12 +185,8 @@
                     <div class="col-lg-6">
                         <div class="footer__copyright text-lg-start text-center">
                             <p class="mb-0">Copyright © 2026 by <a href="index.php">ColorTech Industries</a> All Rights
-                                Reserved.
-                                | <a href="admin/login.php"
-                                    style="color: rgba(255,255,255,0.6); text-decoration: none;">
-                                    <i class="fas fa-lock"></i> Admin
-                                </a>
-                            </p>
+                                Reserved. | <a href="admin/login.php"
+                                    style="color: rgba(255,255,255,0.6); font-size: 0.85em;">Admin</a></p>
                         </div>
                     </div>
 

@@ -58,13 +58,13 @@ ini_set('display_errors', 1);
 try {
     $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
     $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
+        PDO::ATTR_EMULATE_PREPARES => false,
     ];
-    
+
     $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-    
+
 } catch (PDOException $e) {
     die("Database Connection Failed: " . $e->getMessage());
 }
@@ -72,7 +72,8 @@ try {
 /**
  * Autoload Helper Functions
  */
-function getDB() {
+function getDB()
+{
     global $pdo;
     return $pdo;
 }
@@ -80,14 +81,16 @@ function getDB() {
 /**
  * Sanitize Input
  */
-function sanitize($data) {
+function sanitize($data)
+{
     return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8');
 }
 
 /**
  * Generate CSRF Token
  */
-function generateCSRFToken() {
+function generateCSRFToken()
+{
     if (!isset($_SESSION[CSRF_TOKEN_NAME])) {
         $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(32));
     }
@@ -97,7 +100,8 @@ function generateCSRFToken() {
 /**
  * Verify CSRF Token
  */
-function verifyCSRFToken($token) {
+function verifyCSRFToken($token)
+{
     if (!isset($_SESSION[CSRF_TOKEN_NAME])) {
         return false;
     }
@@ -107,7 +111,8 @@ function verifyCSRFToken($token) {
 /**
  * Generate Slug from String
  */
-function generateSlug($string) {
+function generateSlug($string)
+{
     $slug = strtolower(trim($string));
     $slug = preg_replace('/[^a-z0-9-]/', '-', $slug);
     $slug = preg_replace('/-+/', '-', $slug);
@@ -117,9 +122,10 @@ function generateSlug($string) {
 /**
  * Check if Slug Exists
  */
-function slugExists($table, $slug, $excludeId = null) {
+function slugExists($table, $slug, $excludeId = null)
+{
     $pdo = getDB();
-    
+
     if ($excludeId) {
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM $table WHERE slug = ? AND id != ?");
         $stmt->execute([$slug, $excludeId]);
@@ -127,104 +133,108 @@ function slugExists($table, $slug, $excludeId = null) {
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM $table WHERE slug = ?");
         $stmt->execute([$slug]);
     }
-    
+
     return $stmt->fetchColumn() > 0;
 }
 
 /**
  * Generate Unique Slug
  */
-function generateUniqueSlug($table, $string, $excludeId = null) {
+function generateUniqueSlug($table, $string, $excludeId = null)
+{
     $slug = generateSlug($string);
     $originalSlug = $slug;
     $counter = 1;
-    
+
     while (slugExists($table, $slug, $excludeId)) {
         $slug = $originalSlug . '-' . $counter;
         $counter++;
     }
-    
+
     return $slug;
 }
 
 /**
  * Upload Image File
  */
-function uploadImage($file, $uploadDir, $prefix = '') {
+function uploadImage($file, $uploadDir, $prefix = '')
+{
     // Check if file was uploaded
     if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
         return ['success' => false, 'message' => 'No file uploaded or upload error.'];
     }
-    
+
     // Validate file type
     if (!in_array($file['type'], ALLOWED_IMAGE_TYPES)) {
         return ['success' => false, 'message' => 'Invalid file type. Only JPG, PNG, GIF, and WebP allowed.'];
     }
-    
+
     // Validate file size
     if ($file['size'] > MAX_IMAGE_SIZE) {
         return ['success' => false, 'message' => 'File size exceeds maximum limit of 5MB.'];
     }
-    
+
     // Generate unique filename
     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
     $filename = $prefix . time() . '_' . uniqid() . '.' . $extension;
     $filepath = $uploadDir . $filename;
-    
+
     // Create directory if it doesn't exist
     if (!file_exists($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
-    
+
     // Move uploaded file
     if (move_uploaded_file($file['tmp_name'], $filepath)) {
         return ['success' => true, 'filename' => $filename, 'filepath' => $filepath];
     }
-    
+
     return ['success' => false, 'message' => 'Failed to move uploaded file.'];
 }
 
 /**
  * Upload PDF File
  */
-function uploadPDF($file, $uploadDir, $prefix = '') {
+function uploadPDF($file, $uploadDir, $prefix = '')
+{
     // Check if file was uploaded
     if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
         return ['success' => false, 'message' => 'No file uploaded or upload error.'];
     }
-    
+
     // Validate file type
     if (!in_array($file['type'], ALLOWED_PDF_TYPES)) {
         return ['success' => false, 'message' => 'Invalid file type. Only PDF files allowed.'];
     }
-    
+
     // Validate file size
     if ($file['size'] > MAX_PDF_SIZE) {
         return ['success' => false, 'message' => 'File size exceeds maximum limit of 10MB.'];
     }
-    
+
     // Generate unique filename
     $filename = $prefix . time() . '_' . uniqid() . '.pdf';
     $filepath = $uploadDir . $filename;
-    
+
     // Create directory if it doesn't exist
     if (!file_exists($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
-    
+
     // Move uploaded file
     if (move_uploaded_file($file['tmp_name'], $filepath)) {
         $filesize = round($file['size'] / 1024); // Size in KB
         return ['success' => true, 'filename' => $filename, 'filepath' => $filepath, 'filesize' => $filesize];
     }
-    
+
     return ['success' => false, 'message' => 'Failed to move uploaded file.'];
 }
 
 /**
  * Delete File
  */
-function deleteFile($filepath) {
+function deleteFile($filepath)
+{
     if (file_exists($filepath)) {
         return unlink($filepath);
     }
@@ -234,24 +244,27 @@ function deleteFile($filepath) {
 /**
  * Format Date
  */
-function formatDate($date, $format = 'd M Y') {
+function formatDate($date, $format = 'd M Y')
+{
     return date($format, strtotime($date));
 }
 
 /**
  * Format Date Time
  */
-function formatDateTime($datetime, $format = 'd M Y, h:i A') {
+function formatDateTime($datetime, $format = 'd M Y, h:i A')
+{
     return date($format, strtotime($datetime));
 }
 
 /**
  * Get Time Ago
  */
-function timeAgo($datetime) {
+function timeAgo($datetime)
+{
     $timestamp = strtotime($datetime);
     $difference = time() - $timestamp;
-    
+
     if ($difference < 60) {
         return 'Just now';
     } elseif ($difference < 3600) {
@@ -271,7 +284,8 @@ function timeAgo($datetime) {
 /**
  * Redirect Function
  */
-function redirect($url) {
+function redirect($url)
+{
     header("Location: " . $url);
     exit;
 }
@@ -279,7 +293,8 @@ function redirect($url) {
 /**
  * Get Flash Message
  */
-function getFlashMessage() {
+function getFlashMessage()
+{
     if (isset($_SESSION['flash_message'])) {
         $message = $_SESSION['flash_message'];
         unset($_SESSION['flash_message']);
@@ -291,7 +306,8 @@ function getFlashMessage() {
 /**
  * Set Flash Message
  */
-function setFlashMessage($type, $message) {
+function setFlashMessage($type, $message)
+{
     $_SESSION['flash_message'] = [
         'type' => $type, // success, error, warning, info
         'message' => $message
@@ -301,15 +317,16 @@ function setFlashMessage($type, $message) {
 /**
  * Log Activity
  */
-function logActivity($adminId, $action, $tableName, $recordId = null, $description = null) {
+function logActivity($adminId, $action, $tableName, $recordId = null, $description = null)
+{
     $pdo = getDB();
-    
+
     $stmt = $pdo->prepare("
         INSERT INTO activity_logs 
         (admin_id, action, table_name, record_id, description, ip_address, user_agent) 
         VALUES (?, ?, ?, ?, ?, ?, ?)
     ");
-    
+
     $stmt->execute([
         $adminId,
         $action,
@@ -324,14 +341,16 @@ function logActivity($adminId, $action, $tableName, $recordId = null, $descripti
 /**
  * Check if User is Logged In
  */
-function isLoggedIn() {
+function isLoggedIn()
+{
     return isset($_SESSION['admin_id']) && isset($_SESSION['admin_logged_in']);
 }
 
 /**
  * Require Login
  */
-function requireLogin() {
+function requireLogin()
+{
     if (!isLoggedIn()) {
         redirect('login.php');
     }
@@ -340,33 +359,36 @@ function requireLogin() {
 /**
  * Get Current Admin Info
  */
-function getCurrentAdmin() {
+function getCurrentAdmin()
+{
     if (!isLoggedIn()) {
         return null;
     }
-    
+
     $pdo = getDB();
     $stmt = $pdo->prepare("SELECT * FROM admins WHERE id = ? AND status = 'active'");
     $stmt->execute([$_SESSION['admin_id']]);
-    
+
     return $stmt->fetch();
 }
 
 /**
  * Truncate Text
  */
-function truncateText($text, $length = 100, $suffix = '...') {
+function truncateText($text, $length = 100, $suffix = '...')
+{
     if (strlen($text) <= $length) {
         return $text;
     }
-    
+
     return substr($text, 0, $length) . $suffix;
 }
 
 /**
  * Get Status Badge HTML
  */
-function getStatusBadge($status) {
+function getStatusBadge($status)
+{
     $badges = [
         'active' => '<span class="badge bg-success">Active</span>',
         'inactive' => '<span class="badge bg-secondary">Inactive</span>',
@@ -377,6 +399,6 @@ function getStatusBadge($status) {
         'archived' => '<span class="badge bg-secondary">Archived</span>',
         'unsubscribed' => '<span class="badge bg-warning">Unsubscribed</span>',
     ];
-    
+
     return $badges[$status] ?? '<span class="badge bg-secondary">' . ucfirst($status) . '</span>';
 }

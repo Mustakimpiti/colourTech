@@ -1,8 +1,10 @@
-<?php $currentPage = 'about'; include 'header.php'; ?>
+<?php $currentPage = 'about';
+include 'header.php'; ?>
 
 <main>
     <!-- Breadcrumb area start  -->
-    <div class="breadcrumb__area header__background-color breadcrumb__header-up breadcrumb-space overly overflow-hidden">
+    <div
+        class="breadcrumb__area header__background-color breadcrumb__header-up breadcrumb-space overly overflow-hidden">
         <div class="breadcrumb__background" data-background="assets/imgs/breadcrumb/ceo.jpg "></div>
         <div class="container">
             <div class="breadcrumb__bg-left"></div>
@@ -10,7 +12,8 @@
             <div class="row align-items-center justify-content-between">
                 <div class="col-12">
                     <div class="breadcrumb__content text-center">
-                        <h2 class="breadcrumb__title mb-15 mb-sm-10 mb-xs-5 color-white title-animation">CEO Message</h2>
+                        <h2 class="breadcrumb__title mb-15 mb-sm-10 mb-xs-5 color-white title-animation">CEO Message
+                        </h2>
 
                         <div class="breadcrumb__menu">
                             <nav>
@@ -41,9 +44,11 @@
                     <div class="team-details__content">
                         <h2 class="name title-animation">Daniel Smith</h2>
                         <span class="designation">Senior Architect </span>
-                        <p>Eros justo, posuere loborti viverra laoreet matti ullamcorper posuere viverra .Aliquam eros justo, posuere lobortis, viverra laoreet augue mattis fermentum ullamcorper viverra laoreet Aliquam eros justo, posuere loborti viverra laoreet matti ullamcorper posuere</p>
+                        <p>Eros justo, posuere loborti viverra laoreet matti ullamcorper posuere viverra .Aliquam eros
+                            justo, posuere lobortis, viverra laoreet augue mattis fermentum ullamcorper viverra laoreet
+                            Aliquam eros justo, posuere loborti viverra laoreet matti ullamcorper posuere</p>
 
-                       
+
 
                     </div>
                 </div>

@@ -13,27 +13,27 @@ $breadcrumbs = ['Sub-Categories' => ''];
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    
+
     // Add/Edit Sub-Category
     if (isset($_POST['action']) && in_array($_POST['action'], ['add', 'edit'])) {
-        
+
         if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
             setFlashMessage('error', 'Invalid security token.');
             redirect('sub-categories.php');
         }
-        
-        $id = isset($_POST['id']) ? (int)$_POST['id'] : null;
-        $category_id = (int)($_POST['category_id'] ?? 0);
+
+        $id = isset($_POST['id']) ? (int) $_POST['id'] : null;
+        $category_id = (int) ($_POST['category_id'] ?? 0);
         $name = sanitize($_POST['name'] ?? '');
         $slug = sanitize($_POST['slug'] ?? '');
         $short_description = sanitize($_POST['short_description'] ?? '');
         $full_description = $_POST['full_description'] ?? ''; // Allow HTML
-        $sort_order = (int)($_POST['sort_order'] ?? 0);
+        $sort_order = (int) ($_POST['sort_order'] ?? 0);
         $status = sanitize($_POST['status'] ?? 'active');
         $meta_title = sanitize($_POST['meta_title'] ?? '');
         $meta_description = sanitize($_POST['meta_description'] ?? '');
         $meta_keywords = sanitize($_POST['meta_keywords'] ?? '');
-        
+
         // Handle features (convert array to JSON)
         $features = [];
         if (isset($_POST['features']) && is_array($_POST['features'])) {
@@ -45,18 +45,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         $features_json = json_encode($features);
-        
+
         // Validation
         $errors = [];
-        
+
         if (empty($name)) {
             $errors[] = 'Sub-category name is required.';
         }
-        
+
         if (empty($category_id)) {
             $errors[] = 'Please select a parent category.';
         }
-        
+
         if (empty($slug)) {
             $slug = generateUniqueSlug('sub_categories', $name, $id);
         } else {
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $errors[] = 'Slug already exists. Please use a different slug.';
             }
         }
-        
+
         if (empty($errors)) {
             try {
                 if ($_POST['action'] === 'add') {
@@ -75,17 +75,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          meta_title, meta_description, meta_keywords, status) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ");
-                    
+
                     $stmt->execute([
-                        $category_id, $name, $slug, $short_description, $full_description, $features_json,
-                        $sort_order, $meta_title, $meta_description, $meta_keywords, $status
+                        $category_id,
+                        $name,
+                        $slug,
+                        $short_description,
+                        $full_description,
+                        $features_json,
+                        $sort_order,
+                        $meta_title,
+                        $meta_description,
+                        $meta_keywords,
+                        $status
                     ]);
-                    
+
                     $subCategoryId = $pdo->lastInsertId();
-                    
+
                     logActivity($_SESSION['admin_id'], 'created', 'sub_categories', $subCategoryId, "Created sub-category: $name");
                     setFlashMessage('success', 'Sub-category added successfully!');
-                    
+
                 } else {
                     // Update existing sub-category
                     $stmt = $pdo->prepare("
@@ -94,84 +103,94 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             features = ?, sort_order = ?, meta_title = ?, meta_description = ?, meta_keywords = ?, status = ?
                         WHERE id = ?
                     ");
-                    
+
                     $stmt->execute([
-                        $category_id, $name, $slug, $short_description, $full_description, $features_json,
-                        $sort_order, $meta_title, $meta_description, $meta_keywords, $status, $id
+                        $category_id,
+                        $name,
+                        $slug,
+                        $short_description,
+                        $full_description,
+                        $features_json,
+                        $sort_order,
+                        $meta_title,
+                        $meta_description,
+                        $meta_keywords,
+                        $status,
+                        $id
                     ]);
-                    
+
                     logActivity($_SESSION['admin_id'], 'updated', 'sub_categories', $id, "Updated sub-category: $name");
                     setFlashMessage('success', 'Sub-category updated successfully!');
                 }
-                
+
                 redirect('sub-categories.php');
-                
+
             } catch (PDOException $e) {
                 $errors[] = 'Database error: ' . $e->getMessage();
             }
         }
-        
+
         if (!empty($errors)) {
             setFlashMessage('error', implode('<br>', $errors));
         }
     }
-    
+
     // Delete Sub-Category
     if (isset($_POST['action']) && $_POST['action'] === 'delete') {
         if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
             setFlashMessage('error', 'Invalid security token.');
             redirect('sub-categories.php');
         }
-        
-        $id = (int)($_POST['id'] ?? 0);
-        
+
+        $id = (int) ($_POST['id'] ?? 0);
+
         if ($id) {
             // Get sub-category info before deleting
             $stmt = $pdo->prepare("SELECT * FROM sub_categories WHERE id = ?");
             $stmt->execute([$id]);
             $subCategory = $stmt->fetch();
-            
+
             if ($subCategory) {
                 // Delete all images
                 $images = $pdo->prepare("SELECT * FROM sub_category_images WHERE sub_category_id = ?");
                 $images->execute([$id]);
-                
+
                 foreach ($images->fetchAll() as $image) {
                     deleteFile(SUBCATEGORY_UPLOAD_DIR . $image['image_path']);
                 }
-                
+
                 // Delete sub-category (cascades to products and images)
                 $stmt = $pdo->prepare("DELETE FROM sub_categories WHERE id = ?");
                 $stmt->execute([$id]);
-                
+
                 logActivity($_SESSION['admin_id'], 'deleted', 'sub_categories', $id, "Deleted sub-category: " . $subCategory['name']);
                 setFlashMessage('success', 'Sub-category deleted successfully!');
             }
         }
-        
+
         redirect('sub-categories.php');
     }
-    
+
     // Upload Multiple Images
     if (isset($_POST['action']) && $_POST['action'] === 'upload_images') {
-        $sub_category_id = (int)($_POST['sub_category_id'] ?? 0);
-        
+        $sub_category_id = (int) ($_POST['sub_category_id'] ?? 0);
+
         if ($sub_category_id && isset($_FILES['images'])) {
             $uploadedCount = 0;
             $errorCount = 0;
             $errors = [];
-            
+
             // Get current image count for sort order
             $stmt = $pdo->prepare("SELECT COUNT(*) FROM sub_category_images WHERE sub_category_id = ?");
             $stmt->execute([$sub_category_id]);
             $count = $stmt->fetchColumn();
-            
+
             // Check if first image will be primary
             $isFirstImage = ($count == 0);
-            
+
             // Loop through each uploaded file
             $fileCount = count($_FILES['images']['name']);
-            
+
             for ($i = 0; $i < $fileCount; $i++) {
                 // Check if file was uploaded
                 if ($_FILES['images']['error'][$i] === UPLOAD_ERR_OK) {
@@ -183,9 +202,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'error' => $_FILES['images']['error'][$i],
                         'size' => $_FILES['images']['size'][$i]
                     ];
-                    
+
                     $uploadResult = uploadImage($singleFile, SUBCATEGORY_UPLOAD_DIR, 'subcat_');
-                    
+
                     if ($uploadResult['success']) {
                         // Insert image
                         $stmt = $pdo->prepare("
@@ -198,7 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $count + $i + 1,
                             ($isFirstImage && $i == 0) ? 1 : 0 // Only first image of first upload is primary
                         ]);
-                        
+
                         $uploadedCount++;
                     } else {
                         $errorCount++;
@@ -209,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $errors[] = $_FILES['images']['name'][$i] . ': Upload error';
                 }
             }
-            
+
             // Build success/error message
             $messages = [];
             if ($uploadedCount > 0) {
@@ -222,54 +241,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $messages[] = implode('<br>', $errors);
                 }
             }
-            
+
             $messageType = ($errorCount > 0 && $uploadedCount == 0) ? 'error' : (($errorCount > 0) ? 'warning' : 'success');
             setFlashMessage($messageType, implode('<br>', $messages));
         }
-        
+
         redirect('sub-categories.php');
     }
-    
+
     // Delete Image
     if (isset($_POST['action']) && $_POST['action'] === 'delete_image') {
-        $image_id = (int)($_POST['image_id'] ?? 0);
-        
+        $image_id = (int) ($_POST['image_id'] ?? 0);
+
         if ($image_id) {
             $stmt = $pdo->prepare("SELECT * FROM sub_category_images WHERE id = ?");
             $stmt->execute([$image_id]);
             $image = $stmt->fetch();
-            
+
             if ($image) {
                 deleteFile(SUBCATEGORY_UPLOAD_DIR . $image['image_path']);
-                
+
                 $stmt = $pdo->prepare("DELETE FROM sub_category_images WHERE id = ?");
                 $stmt->execute([$image_id]);
-                
+
                 logActivity($_SESSION['admin_id'], 'deleted', 'sub_category_images', $image_id, "Deleted image: " . $image['image_path']);
                 setFlashMessage('success', 'Image deleted successfully!');
             }
         }
-        
+
         redirect('sub-categories.php');
     }
-    
+
     // Set Primary Image
     if (isset($_POST['action']) && $_POST['action'] === 'set_primary') {
-        $image_id = (int)($_POST['image_id'] ?? 0);
-        $sub_category_id = (int)($_POST['sub_category_id'] ?? 0);
-        
+        $image_id = (int) ($_POST['image_id'] ?? 0);
+        $sub_category_id = (int) ($_POST['sub_category_id'] ?? 0);
+
         if ($image_id && $sub_category_id) {
             // Reset all to non-primary
             $stmt = $pdo->prepare("UPDATE sub_category_images SET is_primary = 0 WHERE sub_category_id = ?");
             $stmt->execute([$sub_category_id]);
-            
+
             // Set new primary
             $stmt = $pdo->prepare("UPDATE sub_category_images SET is_primary = 1 WHERE id = ?");
             $stmt->execute([$image_id]);
-            
+
             setFlashMessage('success', 'Primary image updated!');
         }
-        
+
         redirect('sub-categories.php');
     }
 }
@@ -328,11 +347,13 @@ include 'includes/header.php';
                             <td>
                                 <strong><?php echo htmlspecialchars($subCategory['name']); ?></strong>
                                 <?php if ($subCategory['short_description']): ?>
-                                    <br><small class="text-muted"><?php echo truncateText($subCategory['short_description'], 50); ?></small>
+                                    <br><small
+                                        class="text-muted"><?php echo truncateText($subCategory['short_description'], 50); ?></small>
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <span class="badge bg-secondary"><?php echo htmlspecialchars($subCategory['category_name']); ?></span>
+                                <span
+                                    class="badge bg-secondary"><?php echo htmlspecialchars($subCategory['category_name']); ?></span>
                             </td>
                             <td><code><?php echo htmlspecialchars($subCategory['slug']); ?></code></td>
                             <td>
@@ -341,7 +362,8 @@ include 'includes/header.php';
                                 $imageStmt->execute([$subCategory['id']]);
                                 $imageCount = $imageStmt->fetchColumn();
                                 ?>
-                                <span class="badge bg-info"><?php echo $imageCount; ?> image<?php echo $imageCount != 1 ? 's' : ''; ?></span>
+                                <span class="badge bg-info"><?php echo $imageCount; ?>
+                                    image<?php echo $imageCount != 1 ? 's' : ''; ?></span>
                             </td>
                             <td>
                                 <span class="badge bg-primary"><?php echo $subCategory['product_count']; ?></span>
@@ -349,13 +371,19 @@ include 'includes/header.php';
                             <td><?php echo $subCategory['sort_order']; ?></td>
                             <td><?php echo getStatusBadge($subCategory['status']); ?></td>
                             <td>
-                                <button class="btn btn-sm btn-success" onclick="manageImages(<?php echo $subCategory['id']; ?>, '<?php echo htmlspecialchars($subCategory['name']); ?>')" title="Manage Images">
+                                <button class="btn btn-sm btn-success"
+                                    onclick="manageImages(<?php echo $subCategory['id']; ?>, '<?php echo htmlspecialchars($subCategory['name']); ?>')"
+                                    title="Manage Images">
                                     <i class="fas fa-images"></i>
                                 </button>
-                                <button class="btn btn-sm btn-info" onclick="editSubCategory(<?php echo htmlspecialchars(json_encode($subCategory)); ?>)" title="Edit">
+                                <button class="btn btn-sm btn-info"
+                                    onclick="editSubCategory(<?php echo htmlspecialchars(json_encode($subCategory)); ?>)"
+                                    title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteSubCategory(<?php echo $subCategory['id']; ?>, '<?php echo htmlspecialchars($subCategory['name']); ?>')" title="Delete">
+                                <button class="btn btn-sm btn-danger"
+                                    onclick="deleteSubCategory(<?php echo $subCategory['id']; ?>, '<?php echo htmlspecialchars($subCategory['name']); ?>')"
+                                    title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -375,12 +403,12 @@ include 'includes/header.php';
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <input type="hidden" name="action" id="formAction" value="add">
                 <input type="hidden" name="id" id="subCategoryId">
-                
+
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add New Sub-Category</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                
+
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -388,37 +416,42 @@ include 'includes/header.php';
                             <select class="form-select" id="category_id" name="category_id" required>
                                 <option value="">-- Select Category --</option>
                                 <?php foreach ($categories as $cat): ?>
-                                    <option value="<?php echo $cat['id']; ?>"><?php echo htmlspecialchars($cat['name']); ?></option>
+                                    <option value="<?php echo $cat['id']; ?>"><?php echo htmlspecialchars($cat['name']); ?>
+                                    </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="name" class="form-label">Sub-Category Name *</label>
-                            <input type="text" class="form-control" id="name" name="name" required data-slug-source="true" data-slug-target="slug">
+                            <input type="text" class="form-control" id="name" name="name" required
+                                data-slug-source="true" data-slug-target="slug">
                         </div>
-                        
+
                         <div class="col-md-12 mb-3">
                             <label for="slug" class="form-label">Slug *</label>
                             <input type="text" class="form-control" id="slug" name="slug" required>
                             <small class="text-muted">URL-friendly version (auto-generated)</small>
                         </div>
-                        
+
                         <div class="col-12 mb-3">
                             <label for="short_description" class="form-label">Short Description</label>
-                            <textarea class="form-control" id="short_description" name="short_description" rows="2" placeholder="Brief description for listing pages"></textarea>
+                            <textarea class="form-control" id="short_description" name="short_description" rows="2"
+                                placeholder="Brief description for listing pages"></textarea>
                         </div>
-                        
+
                         <div class="col-12 mb-3">
                             <label for="full_description" class="form-label">Full Description</label>
-                            <textarea class="form-control" id="full_description" name="full_description" rows="4" placeholder="Detailed description for detail pages"></textarea>
+                            <textarea class="form-control" id="full_description" name="full_description" rows="4"
+                                placeholder="Detailed description for detail pages"></textarea>
                         </div>
-                        
+
                         <div class="col-12 mb-3">
                             <label class="form-label">Features</label>
                             <div id="featuresContainer">
                                 <div class="input-group mb-2">
-                                    <input type="text" class="form-control" name="features[]" placeholder="Enter a feature">
+                                    <input type="text" class="form-control" name="features[]"
+                                        placeholder="Enter a feature">
                                     <button type="button" class="btn btn-outline-danger" onclick="removeFeature(this)">
                                         <i class="fas fa-times"></i>
                                     </button>
@@ -428,12 +461,12 @@ include 'includes/header.php';
                                 <i class="fas fa-plus me-1"></i>Add Feature
                             </button>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <label for="sort_order" class="form-label">Sort Order</label>
                             <input type="number" class="form-control" id="sort_order" name="sort_order" value="0">
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <label for="status" class="form-label">Status</label>
                             <select class="form-select" id="status" name="status">
@@ -441,22 +474,23 @@ include 'includes/header.php';
                                 <option value="inactive">Inactive</option>
                             </select>
                         </div>
-                        
+
                         <div class="col-12">
                             <hr>
                             <h6>SEO Settings (Optional)</h6>
                         </div>
-                        
+
                         <div class="col-12 mb-3">
                             <label for="meta_title" class="form-label">Meta Title</label>
                             <input type="text" class="form-control" id="meta_title" name="meta_title">
                         </div>
-                        
+
                         <div class="col-12 mb-3">
                             <label for="meta_description" class="form-label">Meta Description</label>
-                            <textarea class="form-control" id="meta_description" name="meta_description" rows="2"></textarea>
+                            <textarea class="form-control" id="meta_description" name="meta_description"
+                                rows="2"></textarea>
                         </div>
-                        
+
                         <div class="col-12 mb-3">
                             <label for="meta_keywords" class="form-label">Meta Keywords</label>
                             <input type="text" class="form-control" id="meta_keywords" name="meta_keywords">
@@ -464,7 +498,7 @@ include 'includes/header.php';
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">
@@ -490,7 +524,7 @@ include 'includes/header.php';
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                     <input type="hidden" name="action" value="upload_images">
                     <input type="hidden" name="sub_category_id" id="uploadSubCategoryId">
-                    
+
                     <div class="input-group">
                         <input type="file" class="form-control" name="images[]" accept="image/*" multiple required>
                         <button type="submit" class="btn btn-primary">
@@ -498,10 +532,11 @@ include 'includes/header.php';
                         </button>
                     </div>
                     <small class="text-muted">
-                        <i class="fas fa-info-circle"></i> You can select multiple images at once (Hold Ctrl/Cmd). Max size: 5MB per image (JPG, PNG, GIF, WebP)
+                        <i class="fas fa-info-circle"></i> You can select multiple images at once (Hold Ctrl/Cmd). Max
+                        size: 5MB per image (JPG, PNG, GIF, WebP)
                     </small>
                 </form>
-                
+
                 <!-- Images Grid -->
                 <div id="imagesGrid" class="row">
                     <!-- Images will be loaded here via JavaScript -->

@@ -1,7 +1,10 @@
 <?php
 /**
- * Sample Request Handler — no captcha
+ * ColourTech Industries - Sample Request Handler
  */
+
+session_start();
+require_once 'includes/db.php';
 
 header('Content-Type: application/json');
 
@@ -10,59 +13,77 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-require_once 'includes/db.php'; // adjust path if needed
+// --- CAPTCHA validation ---
+$userAnswer    = intval($_POST['captcha'] ?? -1);
+$correctAnswer = intval(($_SESSION['sample_captcha_n1'] ?? 0) + ($_SESSION['sample_captcha_n2'] ?? 0));
 
-// Sanitize inputs
-$product_id       = (int)($_POST['product_id']       ?? 0);
-$product_name     = trim($_POST['product_name']      ?? '');
-$name             = trim($_POST['name']              ?? '');
-$email            = trim($_POST['email']             ?? '');
-$phone            = trim($_POST['phone']             ?? '');
-$company          = trim($_POST['company']           ?? '');
-$country          = trim($_POST['country']           ?? '');
-$used_application = trim($_POST['used_application']  ?? '');
-$message          = trim($_POST['message']           ?? '');
+// Regenerate CAPTCHA for next attempt regardless of outcome
+$_SESSION['sample_captcha_n1'] = rand(1, 9);
+$_SESSION['sample_captcha_n2'] = rand(1, 9);
+$newQuestion = $_SESSION['sample_captcha_n1'] . ' + ' . $_SESSION['sample_captcha_n2'] . ' =';
 
-// Validate required fields
+if ($userAnswer !== $correctAnswer) {
+    echo json_encode([
+        'success'          => false,
+        'message'          => 'Incorrect answer. Please try again.',
+        'captcha_question' => $newQuestion,
+    ]);
+    exit;
+}
+
+// --- Sanitize inputs ---
+$name            = trim(strip_tags($_POST['name']             ?? ''));
+$email           = trim(strip_tags($_POST['email']            ?? ''));
+$phone           = trim(strip_tags($_POST['phone']            ?? ''));
+$company         = trim(strip_tags($_POST['company']          ?? ''));
+$country         = trim(strip_tags($_POST['country']          ?? ''));
+$usedApplication = trim(strip_tags($_POST['used_application'] ?? ''));
+$messageText     = trim(strip_tags($_POST['message']          ?? ''));
+$productName     = trim(strip_tags($_POST['product_name']     ?? ''));
+
 if (empty($name) || empty($email)) {
-    echo json_encode(['success' => false, 'message' => 'Name and Email are required.']);
+    echo json_encode(['success' => false, 'message' => 'Name and email are required.', 'captcha_question' => $newQuestion]);
     exit;
 }
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo json_encode(['success' => false, 'message' => 'Please enter a valid email address.']);
+    echo json_encode(['success' => false, 'message' => 'Please enter a valid email address.', 'captcha_question' => $newQuestion]);
     exit;
 }
 
-// Build full message
-$fullMessage  = "Product: $product_name\n";
-$fullMessage .= "Company: $company\n";
-$fullMessage .= "Country: $country\n";
-$fullMessage .= "Used Application: $used_application\n";
-$fullMessage .= "Phone: $phone\n";
-if (!empty($message)) {
-    $fullMessage .= "\n$message";
+// --- Build message body ---
+$subject  = 'Sample Request: ' . $productName;
+$message  = "Product: $productName\n";
+$message .= "Company: $company\n";
+$message .= "Country: $country\n";
+$message .= "Used Application: $usedApplication\n";
+$message .= "Phone: $phone\n";
+if (!empty($messageText)) {
+    $message .= "\n$messageText";
 }
 
-$subject = "Sample Request: $product_name";
-
+// --- Save to contact_inquiries ---
 try {
-    $stmt = $pdo->prepare("
-        INSERT INTO contact_inquiries (name, email, phone, subject, message, ip_address, status)
-        VALUES (?, ?, ?, ?, ?, ?, 'new')
-    ");
-    $stmt->execute([
+    $pdo->prepare("
+        INSERT INTO contact_inquiries (name, email, phone, subject, message, ip_address, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, 'new', NOW())
+    ")->execute([
         $name,
         $email,
         $phone,
         $subject,
-        $fullMessage,
-        $_SERVER['REMOTE_ADDR'] ?? ''
+        $message,
+        $_SERVER['REMOTE_ADDR'] ?? null,
     ]);
 
-    echo json_encode(['success' => true, 'message' => 'Request submitted successfully!']);
+    echo json_encode([
+        'success'          => true,
+        'message'          => 'Sample request submitted successfully.',
+        'captcha_question' => $newQuestion,
+    ]);
 
-} catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Database error. Please try again.']);
+} catch (PDOException $e) {
+    error_log('Sample request error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Something went wrong. Please try again.', 'captcha_question' => $newQuestion]);
 }
-?>
+exit;

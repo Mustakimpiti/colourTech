@@ -1,9 +1,10 @@
 <?php
 /**
- * PDF Gate Handler
- * Saves the user's details to contact_inquiries, then returns JSON { success: true }.
- * The actual PDF download is triggered client-side after this response.
+ * ColourTech Industries - PDF Gate Handler
  */
+
+session_start();
+require_once 'includes/db.php';
 
 header('Content-Type: application/json');
 
@@ -12,56 +13,72 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-require_once 'includes/db.php'; // adjust path if needed — provides $pdo
+// --- CAPTCHA validation ---
+$userAnswer   = intval($_POST['captcha'] ?? -1);
+$correctAnswer = intval(($_SESSION['pdf_captcha_n1'] ?? 0) + ($_SESSION['pdf_captcha_n2'] ?? 0));
 
-// Sanitize inputs
-$product_id   = (int) ($_POST['product_id']   ?? 0);
-$product_name = trim($_POST['product_name']   ?? '');
-$name         = trim($_POST['name']           ?? '');
-$email        = trim($_POST['email']          ?? '');
-$phone        = trim($_POST['phone']          ?? '');
-$company      = trim($_POST['company']        ?? '');
-$pdf_label    = trim($_POST['pdf_label']      ?? 'PDF');
-$pdf_url      = trim($_POST['pdf_url']        ?? '');
+// Regenerate CAPTCHA for next attempt regardless of outcome
+$_SESSION['pdf_captcha_n1'] = rand(1, 9);
+$_SESSION['pdf_captcha_n2'] = rand(1, 9);
+$newQuestion = $_SESSION['pdf_captcha_n1'] . ' + ' . $_SESSION['pdf_captcha_n2'] . ' =';
 
-// Validate required fields
-if (empty($name)) {
-    echo json_encode(['success' => false, 'message' => 'Please enter your name.']);
-    exit;
-}
-if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo json_encode(['success' => false, 'message' => 'Please enter a valid email address.']);
+if ($userAnswer !== $correctAnswer) {
+    echo json_encode([
+        'success'          => false,
+        'message'          => 'Incorrect answer. Please try again.',
+        'captcha_question' => $newQuestion,
+    ]);
     exit;
 }
 
-// Build subject and message
-$subject = 'PDF Download: ' . $pdf_label . ' — ' . $product_name;
+// --- Sanitize inputs ---
+$name       = trim(strip_tags($_POST['name']         ?? ''));
+$email      = trim(strip_tags($_POST['email']        ?? ''));
+$phone      = trim(strip_tags($_POST['phone']        ?? ''));
+$company    = trim(strip_tags($_POST['company']      ?? ''));
+$productId  = intval($_POST['product_id']            ?? 0);
+$productName = trim(strip_tags($_POST['product_name'] ?? ''));
+$pdfUrl     = trim($_POST['pdf_url']                 ?? '');
+$pdfLabel   = trim(strip_tags($_POST['pdf_label']    ?? ''));
 
-$message  = "PDF Downloaded: $pdf_label\n";
-$message .= "Product: $product_name\n";
+if (empty($name) || empty($email)) {
+    echo json_encode(['success' => false, 'message' => 'Name and email are required.', 'captcha_question' => $newQuestion]);
+    exit;
+}
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo json_encode(['success' => false, 'message' => 'Please enter a valid email address.', 'captcha_question' => $newQuestion]);
+    exit;
+}
+
+// --- Save to contact_inquiries ---
+$subject = 'PDF Download: ' . $productName . ' — ' . $pdfLabel;
+$message  = "Product: $productName\n";
 $message .= "Company: $company\n";
 $message .= "Phone: $phone\n";
-$message .= "File: $pdf_url\n";
+$message .= "File: $pdfUrl\n";
 
-// Save to contact_inquiries (same table your admin panel reads)
 try {
-    $stmt = $pdo->prepare("
-        INSERT INTO contact_inquiries (name, email, phone, subject, message, ip_address, status)
-        VALUES (?, ?, ?, ?, ?, ?, 'new')
-    ");
-    $stmt->execute([
+    $pdo->prepare("
+        INSERT INTO contact_inquiries (name, email, phone, subject, message, ip_address, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, 'new', NOW())
+    ")->execute([
         $name,
         $email,
         $phone,
         $subject,
         $message,
-        $_SERVER['REMOTE_ADDR'] ?? ''
+        $_SERVER['REMOTE_ADDR'] ?? null,
     ]);
 
-    echo json_encode(['success' => true]);
+    echo json_encode([
+        'success'          => true,
+        'message'          => 'Success',
+        'captcha_question' => $newQuestion,
+    ]);
 
-} catch (Exception $e) {
-    // Still let the user download even if DB fails
-    echo json_encode(['success' => true]);
+} catch (PDOException $e) {
+    error_log('PDF gate error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Something went wrong. Please try again.', 'captcha_question' => $newQuestion]);
 }
-?>
+exit;

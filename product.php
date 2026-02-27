@@ -9,6 +9,16 @@ if (empty($slug)) {
 
 include 'header.php';
 
+// Generate CAPTCHA numbers and store answers in session
+if (empty($_SESSION['pdf_captcha_n1'])) {
+    $_SESSION['pdf_captcha_n1'] = rand(1, 9);
+    $_SESSION['pdf_captcha_n2'] = rand(1, 9);
+}
+if (empty($_SESSION['sample_captcha_n1'])) {
+    $_SESSION['sample_captcha_n1'] = rand(1, 9);
+    $_SESSION['sample_captcha_n2'] = rand(1, 9);
+}
+
 // Fetch product with full hierarchy
 $prodStmt = $pdo->prepare("
     SELECT p.*, 
@@ -152,7 +162,7 @@ $pdfIcon = '<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="h
                             </p>
                         <?php endif; ?>
 
-                        <!-- PDF Buttons — intercept click, open gate modal -->
+                        <!-- PDF Buttons -->
                         <?php if (!empty($product['pdf_file_1'])): ?>
                             <a href="javascript:void(0)"
                                onclick="openPdfGate('admin/uploads/pdfs/<?php echo htmlspecialchars($product['pdf_file_1']); ?>', '<?php echo addslashes(htmlspecialchars($product['pdf_file_1_label'])); ?>')"
@@ -265,6 +275,27 @@ $pdfIcon = '<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="h
                                                 <input name="company" type="text" placeholder="Company Name">
                                             </div>
                                         </div>
+
+                                        <!-- CAPTCHA — PDF form -->
+                                        <div class="col-xl-6">
+                                            <div class="contact__form-input" style="display:flex; align-items:center; gap:12px;">
+                                                <span id="pdfCaptchaQuestion" style="white-space:nowrap; font-size:16px; color:#555; font-weight:600;">
+                                                    <?php echo $_SESSION['pdf_captcha_n1'] . ' + ' . $_SESSION['pdf_captcha_n2'] . ' ='; ?>
+                                                </span>
+                                                <input name="captcha" type="number" placeholder="Answer" required
+                                                    style="flex:1; border:none; outline:none; background:transparent; font-size:16px; color:#333;">
+                                            </div>
+                                        </div>
+                                        <div class="col-xl-6">
+                                            <div style="padding-top:6px;">
+                                                <small style="color:#999; font-size:0.82rem;">
+                                                    <i class="fas fa-shield-alt" style="color:#BD0BBD;"></i>
+                                                    Please solve the simple math to verify you're human.
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <!-- /CAPTCHA -->
+
                                         <div class="col-12" style="margin-top: 20px;">
                                             <button type="submit" class="rr-btn">
                                                 <span class="btn-wrap">
@@ -372,6 +403,27 @@ $pdfIcon = '<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="h
                                                 </select>
                                             </div>
                                         </div>
+
+                                        <!-- CAPTCHA — Sample Request form -->
+                                        <div class="col-xl-6">
+                                            <div class="contact__form-input" style="display:flex; align-items:center; gap:12px;">
+                                                <span id="sampleCaptchaQuestion" style="white-space:nowrap; font-size:16px; color:#555; font-weight:600;">
+                                                    <?php echo $_SESSION['sample_captcha_n1'] . ' + ' . $_SESSION['sample_captcha_n2'] . ' ='; ?>
+                                                </span>
+                                                <input name="captcha" type="number" placeholder="Answer" required
+                                                    style="flex:1; border:none; outline:none; background:transparent; font-size:16px; color:#333;">
+                                            </div>
+                                        </div>
+                                        <div class="col-xl-6">
+                                            <div style="padding-top:6px;">
+                                                <small style="color:#999; font-size:0.82rem;">
+                                                    <i class="fas fa-shield-alt" style="color:#BD0BBD;"></i>
+                                                    Please solve the simple math to verify you're human.
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <!-- /CAPTCHA -->
+
                                         <div class="col-12" style="margin-top: 20px;">
                                             <button type="submit" class="rr-btn">
                                                 <span class="btn-wrap">
@@ -410,14 +462,10 @@ $pdfIcon = '<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="h
 <script>
 // ---- PDF Gate ----
 function openPdfGate(pdfUrl, pdfLabel) {
-    // Store values
     document.getElementById('pdfGateUrl').value   = pdfUrl;
     document.getElementById('pdfGateLabel').value = pdfLabel;
-
-    // Update modal title
     document.getElementById('pdfGateModalTitle').textContent = pdfLabel + ' — <?php echo addslashes($productName); ?>';
 
-    // Reset to form state
     document.getElementById('pdfGateFormWrapper').style.display = 'block';
     document.getElementById('pdfGateSuccess').style.display     = 'none';
     document.getElementById('pdfGateForm').reset();
@@ -442,14 +490,15 @@ document.getElementById('pdfGateForm').addEventListener('submit', function(e) {
     .then(function(r) { return r.json(); })
     .then(function(data) {
         if (data.success) {
-            // Show success panel
+            // Refresh CAPTCHA question for next open
+            if (data.captcha_question) {
+                document.getElementById('pdfCaptchaQuestion').textContent = data.captcha_question;
+            }
+
             document.getElementById('pdfGateFormWrapper').style.display = 'none';
             document.getElementById('pdfGateSuccess').style.display     = 'block';
-
-            // Set manual fallback link
             document.getElementById('pdfManualLink').href = pdfUrl;
 
-            // Auto-trigger download
             var a = document.createElement('a');
             a.href     = pdfUrl;
             a.target   = '_blank';
@@ -459,15 +508,17 @@ document.getElementById('pdfGateForm').addEventListener('submit', function(e) {
             document.body.removeChild(a);
         } else {
             alert(data.message || 'Something went wrong. Please try again.');
+            // Refresh CAPTCHA on failure too
+            if (data.captcha_question) {
+                document.getElementById('pdfCaptchaQuestion').textContent = data.captcha_question;
+            }
         }
     })
     .catch(function() {
-        // Fallback: open PDF directly
         window.open(pdfUrl, '_blank');
     });
 });
 
-// Reset PDF modal when closed
 document.getElementById('pdfGateModal').addEventListener('hidden.bs.modal', function() {
     document.getElementById('pdfGateFormWrapper').style.display = 'block';
     document.getElementById('pdfGateSuccess').style.display     = 'none';
@@ -489,6 +540,10 @@ document.getElementById('sampleRequestForm').addEventListener('submit', function
             document.getElementById('sampleSuccessMsg').style.display  = 'block';
         } else {
             alert(data.message || 'Something went wrong. Please try again.');
+            // Refresh CAPTCHA on failure
+            if (data.captcha_question) {
+                document.getElementById('sampleCaptchaQuestion').textContent = data.captcha_question;
+            }
         }
     })
     .catch(function() { this.submit(); }.bind(this));

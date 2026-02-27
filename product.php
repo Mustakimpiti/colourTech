@@ -26,10 +26,10 @@ if (!$product) {
     exit;
 }
 
-$productName = html_entity_decode($product['name']);
+$productName     = html_entity_decode($product['name']);
 $subCategoryName = html_entity_decode($product['sub_category_name']);
-$categoryName = html_entity_decode($product['category_name']);
-$colorCode = !empty($product['color_code']) ? $product['color_code'] : '#cccccc';
+$categoryName    = html_entity_decode($product['category_name']);
+$colorCode       = !empty($product['color_code']) ? $product['color_code'] : '#cccccc';
 
 // Fetch all product gallery images
 $imgStmt = $pdo->prepare("
@@ -43,6 +43,34 @@ $galleryImages = $imgStmt->fetchAll();
 
 // Increment view count
 $pdo->prepare("UPDATE products SET views = views + 1 WHERE id = ?")->execute([$product['id']]);
+
+// Country list
+$countries = [
+    "Afghanistan","Albania","Algeria","Andorra","Angola","Argentina","Armenia","Australia","Austria","Azerbaijan",
+    "Bahrain","Bangladesh","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana",
+    "Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cambodia","Cameroon","Canada","Chad","Chile","China",
+    "Colombia","Congo","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Ecuador","Egypt",
+    "El Salvador","Estonia","Ethiopia","Finland","France","Georgia","Germany","Ghana","Greece","Guatemala",
+    "Honduras","Hungary","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan",
+    "Jordan","Kazakhstan","Kenya","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Libya","Lithuania","Luxembourg",
+    "Malaysia","Maldives","Mali","Malta","Mexico","Moldova","Mongolia","Morocco","Mozambique","Myanmar","Nepal",
+    "Netherlands","New Zealand","Nicaragua","Nigeria","North Korea","Norway","Oman","Pakistan","Palestine","Panama",
+    "Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda","Saudi Arabia","Senegal",
+    "Serbia","Singapore","Slovakia","Slovenia","Somalia","South Africa","South Korea","Spain","Sri Lanka","Sudan",
+    "Sweden","Switzerland","Syria","Taiwan","Tajikistan","Tanzania","Thailand","Tunisia","Turkey","Turkmenistan",
+    "Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Venezuela",
+    "Vietnam","Yemen","Zambia","Zimbabwe"
+];
+
+// Application options
+$applications = [
+    "Phthalo Pigments",
+    "Azo Pigments",
+    "High Performance",
+    "Chrome Yellows and Molybdates",
+    "Anti Corrosives",
+    "Others"
+];
 
 // PDF SVG icon (reusable)
 $pdfIcon = '<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -111,33 +139,6 @@ $pdfIcon = '<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="h
                             ?>
                         </h4>
 
-                        <!-- Breadcrumb trail -->
-                        <p style="color:#906E50; margin-bottom:10px;">
-                            <a href="category.php?slug=<?php echo urlencode($product['category_slug']); ?>"
-                                style="color:#906E50;">
-                                <?php echo htmlspecialchars($categoryName); ?>
-                            </a>
-                            &rsaquo;
-                            <a href="sub-category.php?slug=<?php echo urlencode($product['sub_category_slug']); ?>"
-                                style="color:#906E50;">
-                                <?php echo htmlspecialchars($subCategoryName); ?>
-                            </a>
-                        </p>
-
-                        <!-- Color info -->
-                        <?php if (!empty($product['color_name']) || !empty($product['color_index'])): ?>
-                            <p style="margin-bottom:10px;">
-                                <?php if (!empty($product['color_name'])): ?>
-                                    <strong>Color:</strong> <?php echo htmlspecialchars($product['color_name']); ?>
-                                    <span
-                                        style="display:inline-block; width:16px; height:16px; background-color:<?php echo htmlspecialchars($colorCode); ?>; border-radius:50%; vertical-align:middle; margin-left:6px; border:1px solid #ddd;"></span>
-                                <?php endif; ?>
-                                <?php if (!empty($product['color_index'])): ?>
-                                    &nbsp;&nbsp;<strong>C.I.:</strong> <?php echo htmlspecialchars($product['color_index']); ?>
-                                <?php endif; ?>
-                            </p>
-                        <?php endif; ?>
-
                         <!-- Description -->
                         <?php if (!empty($product['short_description'])): ?>
                             <p style="text-align:justify;">
@@ -151,10 +152,11 @@ $pdfIcon = '<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="h
                             </p>
                         <?php endif; ?>
 
-                        <!-- PDF Buttons -->
+                        <!-- PDF Buttons — intercept click, open gate modal -->
                         <?php if (!empty($product['pdf_file_1'])): ?>
-                            <a href="admin/uploads/products/pdfs/<?php echo htmlspecialchars($product['pdf_file_1']); ?>"
-                                target="_blank" class="rr-btn border-raduis-10">
+                            <a href="javascript:void(0)"
+                               onclick="openPdfGate('admin/uploads/pdfs/<?php echo htmlspecialchars($product['pdf_file_1']); ?>', '<?php echo addslashes(htmlspecialchars($product['pdf_file_1_label'])); ?>')"
+                               class="rr-btn border-raduis-10">
                                 <span class="btn-wrap">
                                     <span class="text-one"><?php echo htmlspecialchars($product['pdf_file_1_label']); ?>
                                         <?php echo $pdfIcon; ?></span>
@@ -165,8 +167,9 @@ $pdfIcon = '<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="h
                         <?php endif; ?>
 
                         <?php if (!empty($product['pdf_file_2'])): ?>
-                            <a href="admin/uploads/products/pdfs/<?php echo htmlspecialchars($product['pdf_file_2']); ?>"
-                                target="_blank" class="rr-btn border-raduis-10 mt-xs-10" style="margin-left:10px;">
+                            <a href="javascript:void(0)"
+                               onclick="openPdfGate('admin/uploads/pdfs/<?php echo htmlspecialchars($product['pdf_file_2']); ?>', '<?php echo addslashes(htmlspecialchars($product['pdf_file_2_label'])); ?>')"
+                               class="rr-btn border-raduis-10 mt-xs-10" style="margin-left:10px;">
                                 <span class="btn-wrap">
                                     <span class="text-one"><?php echo htmlspecialchars($product['pdf_file_2_label']); ?>
                                         <?php echo $pdfIcon; ?></span>
@@ -206,30 +209,42 @@ $pdfIcon = '<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="h
     </section>
     <!-- Product detail area end -->
 
-    <!-- Sample Request Modal -->
-    <div class="modal" id="sampleModal" style="margin-top: 110px;">
+
+    <!-- ========== PDF Gate Modal ========== -->
+    <div class="modal" id="pdfGateModal" style="margin-top: 110px;">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h6 class="modal-title">Sample Request — <?php echo htmlspecialchars($productName); ?></h6>
+                    <h6 class="modal-title" id="pdfGateModalTitle">Download PDF</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
-                <section class="contact section-space__bottom">
+                <!-- Success / download state -->
+                <div id="pdfGateSuccess" style="display:none; padding:40px 20px; text-align:center;">
+                    <div style="width:65px; height:65px; background:#28a745; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 13L9 17L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h5 style="color:#333; font-weight:700; margin-bottom:8px;">Your download is starting...</h5>
+                    <p style="color:#666; margin-bottom:10px;">
+                        If it doesn't start automatically,
+                        <a id="pdfManualLink" href="#" target="_blank" style="color:#BD0BBD; font-weight:600;">click here to download</a>.
+                    </p>
+                    <p style="color:#999; font-size:0.88rem;">Thank you for your interest in our products.</p>
+                </div>
+
+                <section id="pdfGateFormWrapper" class="contact section-space__bottom">
                     <div class="container">
                         <div class="row">
                             <div class="col-lg-12">
-                                <form class="contact__from" style="margin-top: 20px;" method="POST"
-                                    action="sample-request.php">
-                                    <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                                    <input type="hidden" name="product_name"
-                                        value="<?php echo htmlspecialchars($productName); ?>">
+                                <form class="contact__from" style="margin-top: 20px;" id="pdfGateForm"
+                                    method="POST" action="pdf-gate.php">
+                                    <input type="hidden" name="product_id"   value="<?php echo $product['id']; ?>">
+                                    <input type="hidden" name="product_name" value="<?php echo htmlspecialchars($productName); ?>">
+                                    <input type="hidden" name="pdf_url"      id="pdfGateUrl"   value="">
+                                    <input type="hidden" name="pdf_label"    id="pdfGateLabel" value="">
                                     <div class="row">
-                                        <div class="col-sm-12">
-                                            <div class="contact__form-input">
-                                                <textarea name="message" placeholder="Type Your Message"></textarea>
-                                            </div>
-                                        </div>
                                         <div class="col-xl-6">
                                             <div class="contact__form-input">
                                                 <input name="name" type="text" placeholder="Full Name" required>
@@ -253,22 +268,14 @@ $pdfIcon = '<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="h
                                         <div class="col-12" style="margin-top: 20px;">
                                             <button type="submit" class="rr-btn">
                                                 <span class="btn-wrap">
-                                                    <span class="text-one">Submit
-                                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
-                                                            xmlns="http://www.w3.org/2000/svg">
-                                                            <path d="M1 6H11" stroke="white" stroke-width="1.5"
-                                                                stroke-linecap="round" stroke-linejoin="round" />
-                                                            <path d="M6 1L11 6L6 11" stroke="white" stroke-width="1.5"
-                                                                stroke-linecap="round" stroke-linejoin="round" />
+                                                    <span class="text-one">Download PDF
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M12 3v13M5 16l7 7 7-7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                                         </svg>
                                                     </span>
-                                                    <span class="text-two">Submit
-                                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
-                                                            xmlns="http://www.w3.org/2000/svg">
-                                                            <path d="M1 6H11" stroke="white" stroke-width="1.5"
-                                                                stroke-linecap="round" stroke-linejoin="round" />
-                                                            <path d="M6 1L11 6L6 11" stroke="white" stroke-width="1.5"
-                                                                stroke-linecap="round" stroke-linejoin="round" />
+                                                    <span class="text-two">Download PDF
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M12 3v13M5 16l7 7 7-7" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                                         </svg>
                                                     </span>
                                                 </span>
@@ -287,8 +294,211 @@ $pdfIcon = '<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="h
             </div>
         </div>
     </div>
-    <!-- Modal end -->
+    <!-- ========== /PDF Gate Modal ========== -->
+
+
+    <!-- ========== Sample Request Modal ========== -->
+    <div class="modal" id="sampleModal" style="margin-top: 110px;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title">Sample Request — <?php echo htmlspecialchars($productName); ?></h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <!-- Success message -->
+                <div id="sampleSuccessMsg" style="display:none; padding:40px 20px; text-align:center;">
+                    <div style="width:65px; height:65px; background:#28a745; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px;">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 13L9 17L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h5 style="color:#333; font-weight:700; margin-bottom:8px;">Thank You!</h5>
+                    <p style="color:#666; margin-bottom:4px;">Your sample request has been submitted successfully.</p>
+                    <p style="color:#999; font-size:0.88rem;">Our team will get back to you shortly.</p>
+                </div>
+
+                <section id="sampleFormWrapper" class="contact section-space__bottom">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <form class="contact__from" style="margin-top: 20px;" id="sampleRequestForm"
+                                    method="POST" action="sample-request.php">
+                                    <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                                    <input type="hidden" name="product_name" value="<?php echo htmlspecialchars($productName); ?>">
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <div class="contact__form-input">
+                                                <textarea name="message" placeholder="How can we help ?"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-xl-6">
+                                            <div class="contact__form-input">
+                                                <input name="name" type="text" placeholder="Full Name" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-xl-6">
+                                            <div class="contact__form-input">
+                                                <input name="email" type="email" placeholder="Email ID" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-xl-6">
+                                            <div class="contact__form-input">
+                                                <input name="phone" type="text" placeholder="Phone">
+                                            </div>
+                                        </div>
+                                        <div class="col-xl-6">
+                                            <div class="contact__form-input">
+                                                <input name="company" type="text" placeholder="Company Name">
+                                            </div>
+                                        </div>
+                                        <div class="col-xl-6">
+                                            <div class="contact__form-input" style="padding:0; background:#f5f5f5;">
+                                                <select name="country" required style="width:100%;height:100%;padding:20px 25px;border:none;outline:none;background:#f5f5f5;font-size:16px;color:#777;cursor:pointer;appearance:none;-webkit-appearance:none;">
+                                                    <option value="" disabled selected>Country</option>
+                                                    <?php foreach ($countries as $country): ?>
+                                                        <option value="<?php echo htmlspecialchars($country); ?>" style="color:#333;"><?php echo htmlspecialchars($country); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-xl-6">
+                                            <div class="contact__form-input" style="padding:0; background:#f5f5f5;">
+                                                <select name="used_application" required style="width:100%;height:100%;padding:20px 25px;border:none;outline:none;background:#f5f5f5;font-size:16px;color:#777;cursor:pointer;appearance:none;-webkit-appearance:none;">
+                                                    <option value="" disabled selected>Used Application</option>
+                                                    <?php foreach ($applications as $app): ?>
+                                                        <option value="<?php echo htmlspecialchars($app); ?>" style="color:#333;"><?php echo htmlspecialchars($app); ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-12" style="margin-top: 20px;">
+                                            <button type="submit" class="rr-btn">
+                                                <span class="btn-wrap">
+                                                    <span class="text-one">Submit
+                                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M1 6H11" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            <path d="M6 1L11 6L6 11" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        </svg>
+                                                    </span>
+                                                    <span class="text-two">Submit
+                                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M1 6H11" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            <path d="M6 1L11 6L6 11" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        </svg>
+                                                    </span>
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ========== /Sample Request Modal ========== -->
 
 </main>
+
+<script>
+// ---- PDF Gate ----
+function openPdfGate(pdfUrl, pdfLabel) {
+    // Store values
+    document.getElementById('pdfGateUrl').value   = pdfUrl;
+    document.getElementById('pdfGateLabel').value = pdfLabel;
+
+    // Update modal title
+    document.getElementById('pdfGateModalTitle').textContent = pdfLabel + ' — <?php echo addslashes($productName); ?>';
+
+    // Reset to form state
+    document.getElementById('pdfGateFormWrapper').style.display = 'block';
+    document.getElementById('pdfGateSuccess').style.display     = 'none';
+    document.getElementById('pdfGateForm').reset();
+
+    // Restore hidden fields after reset
+    document.getElementById('pdfGateUrl').value   = pdfUrl;
+    document.getElementById('pdfGateLabel').value = pdfLabel;
+
+    var modal = new bootstrap.Modal(document.getElementById('pdfGateModal'));
+    modal.show();
+}
+
+document.getElementById('pdfGateForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    var pdfUrl = document.getElementById('pdfGateUrl').value;
+
+    fetch('pdf-gate.php', {
+        method: 'POST',
+        body: new FormData(this)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            // Show success panel
+            document.getElementById('pdfGateFormWrapper').style.display = 'none';
+            document.getElementById('pdfGateSuccess').style.display     = 'block';
+
+            // Set manual fallback link
+            document.getElementById('pdfManualLink').href = pdfUrl;
+
+            // Auto-trigger download
+            var a = document.createElement('a');
+            a.href     = pdfUrl;
+            a.target   = '_blank';
+            a.download = '';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } else {
+            alert(data.message || 'Something went wrong. Please try again.');
+        }
+    })
+    .catch(function() {
+        // Fallback: open PDF directly
+        window.open(pdfUrl, '_blank');
+    });
+});
+
+// Reset PDF modal when closed
+document.getElementById('pdfGateModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('pdfGateFormWrapper').style.display = 'block';
+    document.getElementById('pdfGateSuccess').style.display     = 'none';
+    document.getElementById('pdfGateForm').reset();
+});
+
+// ---- Sample Request ----
+document.getElementById('sampleRequestForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    fetch('sample-request.php', {
+        method: 'POST',
+        body: new FormData(this)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            document.getElementById('sampleFormWrapper').style.display = 'none';
+            document.getElementById('sampleSuccessMsg').style.display  = 'block';
+        } else {
+            alert(data.message || 'Something went wrong. Please try again.');
+        }
+    })
+    .catch(function() { this.submit(); }.bind(this));
+});
+
+document.getElementById('sampleModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('sampleFormWrapper').style.display = 'block';
+    document.getElementById('sampleSuccessMsg').style.display  = 'none';
+    document.getElementById('sampleRequestForm').reset();
+});
+</script>
 
 <?php include 'footer.php'; ?>

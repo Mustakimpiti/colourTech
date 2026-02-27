@@ -1,28 +1,68 @@
 <?php
-require_once 'includes/db.php';
+/**
+ * Sample Request Handler — no captcha
+ */
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $productId = intval($_POST['product_id'] ?? 0);
-    $productName = trim($_POST['product_name'] ?? '');
-    $name = trim($_POST['name'] ?? '');
-    $email = trim($_POST['email'] ?? '');
-    $phone = trim($_POST['phone'] ?? '');
-    $company = trim($_POST['company'] ?? '');
-    $message = trim($_POST['message'] ?? '');
+header('Content-Type: application/json');
 
-    if (!empty($name) && !empty($email)) {
-        $subject = "Sample Request: " . $productName;
-        $fullMessage = "Product: $productName\nCompany: $company\nPhone: $phone\n\n$message";
-
-        $stmt = $pdo->prepare("
-            INSERT INTO contact_inquiries (name, email, phone, subject, message, ip_address)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->execute([$name, $email, $phone, $subject, $fullMessage, $_SERVER['REMOTE_ADDR']]);
-    }
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['success' => false, 'message' => 'Invalid request.']);
+    exit;
 }
 
-// Redirect back to the product page
-$referer = $_SERVER['HTTP_REFERER'] ?? 'index.php';
-header('Location: ' . $referer);
-exit;
+require_once 'includes/db.php'; // adjust path if needed
+
+// Sanitize inputs
+$product_id       = (int)($_POST['product_id']       ?? 0);
+$product_name     = trim($_POST['product_name']      ?? '');
+$name             = trim($_POST['name']              ?? '');
+$email            = trim($_POST['email']             ?? '');
+$phone            = trim($_POST['phone']             ?? '');
+$company          = trim($_POST['company']           ?? '');
+$country          = trim($_POST['country']           ?? '');
+$used_application = trim($_POST['used_application']  ?? '');
+$message          = trim($_POST['message']           ?? '');
+
+// Validate required fields
+if (empty($name) || empty($email)) {
+    echo json_encode(['success' => false, 'message' => 'Name and Email are required.']);
+    exit;
+}
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo json_encode(['success' => false, 'message' => 'Please enter a valid email address.']);
+    exit;
+}
+
+// Build full message
+$fullMessage  = "Product: $product_name\n";
+$fullMessage .= "Company: $company\n";
+$fullMessage .= "Country: $country\n";
+$fullMessage .= "Used Application: $used_application\n";
+$fullMessage .= "Phone: $phone\n";
+if (!empty($message)) {
+    $fullMessage .= "\n$message";
+}
+
+$subject = "Sample Request: $product_name";
+
+try {
+    $stmt = $pdo->prepare("
+        INSERT INTO contact_inquiries (name, email, phone, subject, message, ip_address, status)
+        VALUES (?, ?, ?, ?, ?, ?, 'new')
+    ");
+    $stmt->execute([
+        $name,
+        $email,
+        $phone,
+        $subject,
+        $fullMessage,
+        $_SERVER['REMOTE_ADDR'] ?? ''
+    ]);
+
+    echo json_encode(['success' => true, 'message' => 'Request submitted successfully!']);
+
+} catch (Exception $e) {
+    echo json_encode(['success' => false, 'message' => 'Database error. Please try again.']);
+}
+?>

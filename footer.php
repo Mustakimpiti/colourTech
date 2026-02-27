@@ -9,14 +9,15 @@
                     <div class="col-lg-6 text-lg-start text-center rr-mb-40-md">
                         <div class="footer-cta__content-text">
                             <h2 class="footer-cta__content-title color-white">Subscribe to Our Newsletter</h2>
+                            <p class="color-white mb-0" style="opacity:0.8;">Get the latest updates on new pigments, industry news and innovations.</p>
                         </div>
                     </div>
                     <div class="col-lg-6 text-lg-end text-center">
-                        <div class="footer__widget-subscribe ">
-                            <input type="email" placeholder="Enter your email address">
-                            <button type="submit" class="rr-btn">
+                        <div class="footer__widget-subscribe">
+                            <input type="email" id="newsletterEmail" placeholder="Enter your email address" autocomplete="email">
+                            <button type="button" id="newsletterBtn" class="rr-btn" onclick="subscribeNewsletter()">
                                 <span class="btn-wrap">
-                                    <span class="text-one">Contact Us
+                                    <span class="text-one">Subscribe
                                         <svg width="12" height="13" viewBox="0 0 12 13" fill="none"
                                             xmlns="http://www.w3.org/2000/svg">
                                             <path d="M1 6.5H11" stroke="white" stroke-width="1.5" stroke-linecap="round"
@@ -25,7 +26,7 @@
                                                 stroke-linecap="round" stroke-linejoin="round" />
                                         </svg>
                                     </span>
-                                    <span class="text-two">Contact Us
+                                    <span class="text-two">Subscribe
                                         <svg width="12" height="13" viewBox="0 0 12 13" fill="none"
                                             xmlns="http://www.w3.org/2000/svg">
                                             <path d="M1 6.5H11" stroke="white" stroke-width="1.5" stroke-linecap="round"
@@ -37,6 +38,8 @@
                                 </span>
                             </button>
                         </div>
+                        <!-- Feedback message shown below the form -->
+                        <div id="newsletterMsg" style="margin-top:10px; display:none; font-size:0.92rem; font-weight:500;"></div>
                     </div>
                 </div>
             </div>
@@ -132,14 +135,12 @@
                                         <span class="text">
                                             <span>Phone Number</span>
                                             <?php if (!empty($contactInfo['site_phone_1'])): ?>
-                                                <a
-                                                    href="tel:<?php echo preg_replace('/\s+/', '', $contactInfo['site_phone_1']); ?>">
+                                                <a href="tel:<?php echo preg_replace('/\s+/', '', $contactInfo['site_phone_1']); ?>">
                                                     <?php echo htmlspecialchars($contactInfo['site_phone_1']); ?>
                                                 </a>
                                             <?php endif; ?>
                                             <?php if (!empty($contactInfo['site_phone_2'])): ?>
-                                                <a
-                                                    href="tel:<?php echo preg_replace('/\s+/', '', $contactInfo['site_phone_2']); ?>">
+                                                <a href="tel:<?php echo preg_replace('/\s+/', '', $contactInfo['site_phone_2']); ?>">
                                                     <?php echo htmlspecialchars($contactInfo['site_phone_2']); ?>
                                                 </a>
                                             <?php endif; ?>
@@ -152,8 +153,7 @@
                                         <span class="text">
                                             <span>Email Address</span>
                                             <?php if (!empty($contactInfo['site_email'])): ?>
-                                                <a
-                                                    href="mailto:<?php echo htmlspecialchars($contactInfo['site_email']); ?>">
+                                                <a href="mailto:<?php echo htmlspecialchars($contactInfo['site_email']); ?>">
                                                     <?php echo htmlspecialchars($contactInfo['site_email']); ?>
                                                 </a>
                                             <?php endif; ?>
@@ -191,7 +191,7 @@
                     </div>
 
                     <div class="col-lg-6">
-                        <div class="footer__copyright-menu  last_no_bullet">
+                        <div class="footer__copyright-menu last_no_bullet">
                             <ul>
                                 <li><a href="#">Privacy & Policy </a></li>
                                 <li><a href="#">Term & Conditions</a></li>
@@ -204,6 +204,72 @@
     </section>
 </footer>
 <!-- Footer area end -->
+
+<!-- Newsletter Subscription Script -->
+<script>
+function subscribeNewsletter() {
+    const emailInput = document.getElementById('newsletterEmail');
+    const msgBox     = document.getElementById('newsletterMsg');
+    const btn        = document.getElementById('newsletterBtn');
+    const email      = emailInput.value.trim();
+
+    // Client-side validation
+    if (!email) {
+        showNewsletterMsg('Please enter your email address.', false);
+        emailInput.focus();
+        return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showNewsletterMsg('Please enter a valid email address.', false);
+        emailInput.focus();
+        return;
+    }
+
+    // Disable button while submitting
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+
+    const formData = new FormData();
+    formData.append('email', email);
+
+    fetch('newsletter-subscribe.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        showNewsletterMsg(data.message, data.success);
+        if (data.success) {
+            emailInput.value = '';
+        }
+    })
+    .catch(() => {
+        showNewsletterMsg('Something went wrong. Please try again.', false);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    });
+}
+
+function showNewsletterMsg(message, success) {
+    const msgBox = document.getElementById('newsletterMsg');
+    msgBox.textContent = message;
+    msgBox.style.display = 'block';
+    msgBox.style.color = success ? '#4ade80' : '#f87171'; // green : red
+}
+
+// Allow pressing Enter in the email input to submit
+document.addEventListener('DOMContentLoaded', function () {
+    const emailInput = document.getElementById('newsletterEmail');
+    if (emailInput) {
+        emailInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') subscribeNewsletter();
+        });
+    }
+});
+</script>
 
 <!-- JS here -->
 <script src="assets/js/vendor/jquery-3.7.1.min.js"></script>

@@ -368,6 +368,8 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
         </div>
 
         <div class="sidebar-menu">
+
+            <!-- Dashboard -->
             <div class="menu-item">
                 <a href="index.php" class="<?php echo $currentPage === 'index' ? 'active' : ''; ?>">
                     <i class="fas fa-home"></i>
@@ -375,6 +377,7 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                 </a>
             </div>
 
+            <!-- Product Management -->
             <div class="menu-label">Product Management</div>
 
             <div class="menu-item">
@@ -398,60 +401,59 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                 </a>
             </div>
 
+            <!-- Content Management -->
+            <div class="menu-label">Content Management</div>
+
             <div class="menu-item">
                 <a href="inquiries.php" class="<?php echo $currentPage === 'inquiries' ? 'active' : ''; ?>">
                     <i class="fas fa-comments"></i>
                     <span>Contact Inquiries</span>
                     <?php
-                    $newCount = $pdo->query("SELECT COUNT(*) FROM contact_inquiries WHERE status = 'new'")->fetchColumn();
-                    if ($newCount > 0):
-                        ?>
-                        <span class="badge bg-danger ms-auto">
-                            <?php echo $newCount; ?>
-                        </span>
+                    $newInquiryCount = $pdo->query("SELECT COUNT(*) FROM contact_inquiries WHERE status = 'new'")->fetchColumn();
+                    if ($newInquiryCount > 0):
+                    ?>
+                        <span class="badge bg-danger ms-auto"><?php echo $newInquiryCount; ?></span>
                     <?php endif; ?>
                 </a>
             </div>
 
-            <!-- <div class="menu-label">Content Management</div>
-            
             <div class="menu-item">
                 <a href="newsletters.php" class="<?php echo $currentPage === 'newsletters' ? 'active' : ''; ?>">
                     <i class="fas fa-envelope"></i>
-                    <span>Newsletters</span>
+                    <span>Newsletter Subscribers</span>
+                    <?php
+                    $newsletterCount = $pdo->query("SELECT COUNT(*) FROM newsletters WHERE status = 'active'")->fetchColumn();
+                    if ($newsletterCount > 0):
+                    ?>
+                        <span class="badge bg-success ms-auto"><?php echo $newsletterCount; ?></span>
+                    <?php endif; ?>
                 </a>
             </div>
-            
-            <div class="menu-item">
-                <a href="inquiries.php" class="<?php echo $currentPage === 'inquiries' ? 'active' : ''; ?>">
-                    <i class="fas fa-comments"></i>
-                    <span>Contact Inquiries</span>
-                </a>
-            </div>
-            
-            <div class="menu-label">Settings</div>
-            
+
+            <!-- Settings -->
+            <!-- <div class="menu-label">Settings</div>
+
             <div class="menu-item">
                 <a href="site-settings.php" class="<?php echo $currentPage === 'site-settings' ? 'active' : ''; ?>">
                     <i class="fas fa-cog"></i>
                     <span>Site Settings</span>
                 </a>
             </div>
-            
+
             <div class="menu-item">
                 <a href="admins.php" class="<?php echo $currentPage === 'admins' ? 'active' : ''; ?>">
                     <i class="fas fa-users-cog"></i>
                     <span>Admin Users</span>
                 </a>
             </div>
-            
+
             <div class="menu-item">
                 <a href="activity-logs.php" class="<?php echo $currentPage === 'activity-logs' ? 'active' : ''; ?>">
                     <i class="fas fa-history"></i>
                     <span>Activity Logs</span>
                 </a>
             </div>
-            
+
             <div class="menu-item">
                 <a href="profile.php" class="<?php echo $currentPage === 'profile' ? 'active' : ''; ?>">
                     <i class="fas fa-user-circle"></i>
@@ -459,12 +461,16 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                 </a>
             </div> -->
 
+            <!-- Logout -->
+            <div class="menu-label">Account</div>
+
             <div class="menu-item">
                 <a href="logout.php" onclick="return confirm('Are you sure you want to logout?')">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
             </div>
+
         </div>
     </div>
 
@@ -506,20 +512,17 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
         <!-- Page Content -->
         <div class="page-content">
             <?php
-            // Display flash messages
             $flash = getFlashMessage();
             if ($flash):
-                ?>
+                $icons = [
+                    'success' => 'fa-check-circle',
+                    'error'   => 'fa-exclamation-circle',
+                    'warning' => 'fa-exclamation-triangle',
+                    'info'    => 'fa-info-circle'
+                ];
+                $icon = $icons[$flash['type']] ?? 'fa-info-circle';
+            ?>
                 <div class="alert alert-<?php echo $flash['type']; ?> alert-dismissible fade show" role="alert">
-                    <?php
-                    $icons = [
-                        'success' => 'fa-check-circle',
-                        'error' => 'fa-exclamation-circle',
-                        'warning' => 'fa-exclamation-triangle',
-                        'info' => 'fa-info-circle'
-                    ];
-                    $icon = $icons[$flash['type']] ?? 'fa-info-circle';
-                    ?>
                     <i class="fas <?php echo $icon; ?> me-2"></i>
                     <?php echo $flash['message']; ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>

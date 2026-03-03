@@ -124,6 +124,29 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
             background: linear-gradient(90deg, rgba(189, 11, 189, 0.2) 0%, transparent 100%);
         }
 
+        /* Sub-menu indent for inquiry links */
+        .menu-item.submenu-item a {
+            padding-left: 52px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        .menu-item.submenu-item a i {
+            width: 18px;
+            font-size: 0.9rem;
+        }
+
+        .menu-item.submenu-item a:hover,
+        .menu-item.submenu-item a.active {
+            padding-left: 60px;
+            color: white;
+        }
+
+        .menu-item.submenu-item a.active {
+            border-left: 4px solid var(--secondary-color);
+            background: linear-gradient(90deg, rgba(235, 184, 10, 0.15) 0%, transparent 100%);
+        }
+
         .menu-label {
             padding: 20px 20px 10px;
             color: rgba(255, 255, 255, 0.5);
@@ -214,11 +237,6 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
             color: #333;
             font-weight: 700;
             margin-bottom: 5px;
-        }
-
-        .page-header p {
-            color: #666;
-            margin: 0;
         }
 
         /* Cards */
@@ -402,24 +420,72 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
             </div>
 
             <!-- Content Management -->
-            <div class="menu-label">Content Management</div>
+            <div class="menu-label">Inquiries</div>
 
+            <?php
+            // Fetch counts once for all three badges
+            $newContactCount = (int) $pdo->query("
+                SELECT COUNT(*) FROM contact_inquiries
+                WHERE status = 'new'
+                AND subject NOT LIKE 'Sample Request:%'
+                AND subject NOT LIKE 'PDF Download:%'
+            ")->fetchColumn();
+
+            $newSampleCount = (int) $pdo->query("
+                SELECT COUNT(*) FROM contact_inquiries
+                WHERE status = 'new'
+                AND subject LIKE 'Sample Request:%'
+            ")->fetchColumn();
+
+            $newPdfCount = (int) $pdo->query("
+                SELECT COUNT(*) FROM contact_inquiries
+                WHERE status = 'new'
+                AND subject LIKE 'PDF Download:%'
+            ")->fetchColumn();
+            ?>
+
+            <!-- General Contact -->
             <div class="menu-item">
-                <a href="inquiries.php" class="<?php echo $currentPage === 'inquiries' ? 'active' : ''; ?>">
-                    <i class="fas fa-comments"></i>
-                    <span>Contact Inquiries</span>
-                    <?php
-                    $newInquiryCount = $pdo->query("SELECT COUNT(*) FROM contact_inquiries WHERE status = 'new'")->fetchColumn();
-                    if ($newInquiryCount > 0):
-                    ?>
-                        <span class="badge bg-danger ms-auto"><?php echo $newInquiryCount; ?></span>
+                <a href="inquiries-contact.php"
+                   class="<?php echo $currentPage === 'inquiries-contact' ? 'active' : ''; ?>">
+                    <i class="fas fa-envelope"></i>
+                    <span>General Contact</span>
+                    <?php if ($newContactCount > 0): ?>
+                        <span class="badge bg-danger ms-auto"><?php echo $newContactCount; ?></span>
                     <?php endif; ?>
                 </a>
             </div>
 
+            <!-- Sample Requests -->
+            <div class="menu-item">
+                <a href="inquiries-samples.php"
+                   class="<?php echo $currentPage === 'inquiries-samples' ? 'active' : ''; ?>">
+                    <i class="fas fa-paint-brush"></i>
+                    <span>Sample Requests</span>
+                    <?php if ($newSampleCount > 0): ?>
+                        <span class="badge bg-warning text-dark ms-auto"><?php echo $newSampleCount; ?></span>
+                    <?php endif; ?>
+                </a>
+            </div>
+
+            <!-- PDF Downloads -->
+            <div class="menu-item">
+                <a href="inquiries-pdf.php"
+                   class="<?php echo $currentPage === 'inquiries-pdf' ? 'active' : ''; ?>">
+                    <i class="fas fa-file-arrow-down"></i>
+                    <span>PDF Downloads</span>
+                    <?php if ($newPdfCount > 0): ?>
+                        <span class="badge bg-primary ms-auto"><?php echo $newPdfCount; ?></span>
+                    <?php endif; ?>
+                </a>
+            </div>
+
+            <!-- Newsletter -->
+            <div class="menu-label">Marketing</div>
+
             <div class="menu-item">
                 <a href="newsletters.php" class="<?php echo $currentPage === 'newsletters' ? 'active' : ''; ?>">
-                    <i class="fas fa-envelope"></i>
+                    <i class="fas fa-paper-plane"></i>
                     <span>Newsletter Subscribers</span>
                     <?php
                     $newsletterCount = $pdo->query("SELECT COUNT(*) FROM newsletters WHERE status = 'active'")->fetchColumn();
@@ -429,37 +495,6 @@ $currentPage = basename($_SERVER['PHP_SELF'], '.php');
                     <?php endif; ?>
                 </a>
             </div>
-
-            <!-- Settings -->
-            <!-- <div class="menu-label">Settings</div>
-
-            <div class="menu-item">
-                <a href="site-settings.php" class="<?php echo $currentPage === 'site-settings' ? 'active' : ''; ?>">
-                    <i class="fas fa-cog"></i>
-                    <span>Site Settings</span>
-                </a>
-            </div>
-
-            <div class="menu-item">
-                <a href="admins.php" class="<?php echo $currentPage === 'admins' ? 'active' : ''; ?>">
-                    <i class="fas fa-users-cog"></i>
-                    <span>Admin Users</span>
-                </a>
-            </div>
-
-            <div class="menu-item">
-                <a href="activity-logs.php" class="<?php echo $currentPage === 'activity-logs' ? 'active' : ''; ?>">
-                    <i class="fas fa-history"></i>
-                    <span>Activity Logs</span>
-                </a>
-            </div>
-
-            <div class="menu-item">
-                <a href="profile.php" class="<?php echo $currentPage === 'profile' ? 'active' : ''; ?>">
-                    <i class="fas fa-user-circle"></i>
-                    <span>My Profile</span>
-                </a>
-            </div> -->
 
             <!-- Logout -->
             <div class="menu-label">Account</div>

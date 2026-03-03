@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Handle PDF file 2 upload
         $pdf_file_2 = '';
-        $pdf_file_2_label = sanitize($_POST['pdf_file_2_label'] ?? 'Safety Datasheet');
+        $pdf_file_2_label = sanitize($_POST['pdf_file_2_label'] ?? 'Material Safety Datasheet');
         $pdf_file_2_size = null;
         
         if (isset($_FILES['pdf_file_2']) && $_FILES['pdf_file_2']['error'] === UPLOAD_ERR_OK) {
@@ -821,7 +821,7 @@ include 'includes/header.php';
                                 
                                 <div class="col-md-6 mb-3">
                                     <label for="pdf_file_2_label" class="form-label">PDF 2 Label</label>
-                                    <input type="text" class="form-control" id="pdf_file_2_label" name="pdf_file_2_label" value="Safety Datasheet">
+                                    <input type="text" class="form-control" id="pdf_file_2_label" name="pdf_file_2_label" value="Material Safety Datasheet">
                                 </div>
                                 
                                 <div class="col-md-6 mb-3">
@@ -1066,7 +1066,7 @@ function editProduct(productId) {
             document.getElementById('meta_keywords').value = product.meta_keywords || '';
             document.getElementById('oldImage').value = product.image || '';
             document.getElementById('pdf_file_1_label').value = product.pdf_file_1_label || 'Technical Datasheet';
-            document.getElementById('pdf_file_2_label').value = product.pdf_file_2_label || 'Safety Datasheet';
+            document.getElementById('pdf_file_2_label').value = product.pdf_file_2_label || 'Material Safety Datasheet';
             document.getElementById('oldPdf1').value = product.pdf_file_1 || '';
             document.getElementById('oldPdf1Size').value = product.pdf_file_1_size || '';
             document.getElementById('oldPdf2').value = product.pdf_file_2 || '';

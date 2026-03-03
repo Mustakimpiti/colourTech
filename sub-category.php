@@ -51,8 +51,8 @@ $breadcrumbBg = !empty($subCatImages[0]['image_path'])
     ? 'admin/uploads/sub-categories/' . $subCatImages[0]['image_path']
     : 'assets/imgs/breadcrumb/paint-coating.jpg';
 
-// First 2 images for the content section
-$contentImages = array_slice($subCatImages, 0, 2);
+// Skip first image (used in header), show next 2 in content
+$contentImages = array_slice($subCatImages, 1, 2);
 
 // Fetch active products for this sub-category
 $prodStmt = $pdo->prepare("
@@ -96,21 +96,8 @@ for ($i = 0; $i < $total; $i++) {
             <div class="row align-items-center justify-content-between">
                 <div class="col-12">
                     <div class="breadcrumb__content text-center">
-                        <h2 class="breadcrumb__title mb-15 mb-sm-10 mb-xs-5 color-white title-animation">
-                            <?php echo htmlspecialchars($subCategoryName); ?>
-                        </h2>
-                        <div class="breadcrumb__menu">
-                            <nav>
-                                <ul>
-                                    <li><span><a href="index.php">Home</a></span></li>
-                                    <li><span><a
-                                                href="category.php?slug=<?php echo urlencode($categorySlug); ?>"><?php echo htmlspecialchars($categoryName); ?></a></span>
-                                    </li>
-                                    <li class="active"><span><?php echo htmlspecialchars($subCategoryName); ?></span>
-                                    </li>
-                                </ul>
-                            </nav>
-                        </div>
+                        
+                        
                     </div>
                 </div>
             </div>

@@ -621,37 +621,49 @@ include 'includes/header.php';
                 <input type="hidden" name="old_pdf_1_size" id="oldPdf1Size">
                 <input type="hidden" name="old_pdf_2" id="oldPdf2">
                 <input type="hidden" name="old_pdf_2_size" id="oldPdf2Size">
-                
+
                 <div class="modal-header">
                     <h5 class="modal-title" id="modalTitle">Add New Product</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                
+
                 <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+
                     <!-- Nav Tabs -->
                     <ul class="nav nav-tabs mb-3" role="tablist" style="flex-wrap: nowrap; overflow-x: auto;">
                         <li class="nav-item" style="white-space: nowrap;">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#basicInfo">Basic Info</a>
+                            <a class="nav-link active" data-bs-toggle="tab" href="#basicInfo">
+                                <i class="fas fa-info-circle me-1"></i>Basic Info
+                            </a>
                         </li>
                         <li class="nav-item" style="white-space: nowrap;">
-                            <a class="nav-link" data-bs-toggle="tab" href="#colorInfo">Color</a>
+                            <a class="nav-link" data-bs-toggle="tab" href="#colorInfo">
+                                <i class="fas fa-palette me-1"></i>Color
+                            </a>
                         </li>
                         <li class="nav-item" style="white-space: nowrap;">
-                            <a class="nav-link" data-bs-toggle="tab" href="#technicalInfo">Tech Specs</a>
+                            <a class="nav-link" data-bs-toggle="tab" href="#technicalInfo">
+                                <i class="fas fa-flask me-1"></i>Tech Specs
+                            </a>
                         </li>
                         <li class="nav-item" style="white-space: nowrap;">
-                            <a class="nav-link" data-bs-toggle="tab" href="#mediaInfo">Media</a>
+                            <a class="nav-link" data-bs-toggle="tab" href="#mediaInfo">
+                                <i class="fas fa-photo-video me-1"></i>Media
+                            </a>
                         </li>
                         <li class="nav-item" style="white-space: nowrap;">
-                            <a class="nav-link" data-bs-toggle="tab" href="#seoInfo">SEO</a>
+                            <a class="nav-link" data-bs-toggle="tab" href="#seoInfo">
+                                <i class="fas fa-search me-1"></i>SEO
+                            </a>
                         </li>
                     </ul>
-                    
-                    <!-- Tab Content -->
+
                     <div class="tab-content">
-                        <!-- Basic Information Tab -->
+
+                        <!-- ── Basic Info ── -->
                         <div class="tab-pane fade show active" id="basicInfo">
                             <div class="row">
+
                                 <div class="col-md-6 mb-3">
                                     <label for="sub_category_id" class="form-label">Sub-Category *</label>
                                     <select class="form-select" id="sub_category_id" name="sub_category_id" required>
@@ -673,95 +685,116 @@ include 'includes/header.php';
                                         if ($currentCat != '') echo '</optgroup>';
                                         ?>
                                     </select>
+                                    <div class="form-text">Parent sub-category (e.g. AZO Organic Pigments).</div>
                                 </div>
-                                
+
                                 <div class="col-md-6 mb-3">
                                     <label for="name" class="form-label">Product Name *</label>
-                                    <input type="text" class="form-control" id="name" name="name" required data-slug-source="true" data-slug-target="slug">
+                                    <input type="text" class="form-control" id="name" name="name" required
+                                           placeholder="e.g. Pigment Yellow 1"
+                                           data-slug-source="true" data-slug-target="slug">
+                                    <div class="form-text">Full commercial name. Slug is auto-generated.</div>
                                 </div>
-                                
+
                                 <div class="col-md-6 mb-3">
                                     <label for="slug" class="form-label">Slug *</label>
-                                    <input type="text" class="form-control" id="slug" name="slug" required>
-                                    <small class="text-muted">URL-friendly version (auto-generated)</small>
+                                    <input type="text" class="form-control" id="slug" name="slug" required
+                                           placeholder="e.g. pigment-yellow-1">
+                                    <div class="form-text">URL identifier. Lowercase, hyphens only. Must be unique.</div>
                                 </div>
-                                
+
                                 <div class="col-md-6 mb-3">
                                     <label for="product_code" class="form-label">Product Code</label>
-                                    <input type="text" class="form-control" id="product_code" name="product_code" placeholder="e.g., PY-1, PY-12">
+                                    <input type="text" class="form-control" id="product_code" name="product_code"
+                                           placeholder="e.g. PY-1, PR-48:2">
+                                    <div class="form-text">Industry/C.I. short code shown in brackets.</div>
                                 </div>
-                                
+
                                 <div class="col-12 mb-3">
                                     <label for="short_description" class="form-label">Short Description</label>
-                                    <textarea class="form-control" id="short_description" name="short_description" rows="2" placeholder="Brief description for listing pages"></textarea>
+                                    <textarea class="form-control" id="short_description" name="short_description" rows="2"
+                                              placeholder="e.g. High-quality lemon yellow pigment for paint and coating applications."></textarea>
+                                    <div class="form-text">Shown on listing pages. Keep under 160 chars.</div>
                                 </div>
-                                
+
                                 <div class="col-12 mb-3">
                                     <label for="full_description" class="form-label">Full Description</label>
-                                    <textarea class="form-control" id="full_description" name="full_description" rows="5" placeholder="Detailed description for product pages"></textarea>
+                                    <textarea class="form-control" id="full_description" name="full_description" rows="5"
+                                              placeholder="Detailed technical description..."></textarea>
+                                    <div class="form-text">Shown on product detail page. HTML allowed.</div>
                                 </div>
-                                
+
                                 <div class="col-md-4 mb-3">
                                     <label for="sort_order" class="form-label">Sort Order</label>
-                                    <input type="number" class="form-control" id="sort_order" name="sort_order" value="0">
+                                    <input type="number" class="form-control" id="sort_order" name="sort_order" value="0" min="0">
+                                    <div class="form-text">Lower = appears first.</div>
                                 </div>
-                                
+
                                 <div class="col-md-4 mb-3">
                                     <label for="status" class="form-label">Status</label>
                                     <select class="form-select" id="status" name="status">
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
+                                        <option value="active">Active — visible</option>
+                                        <option value="inactive">Inactive — hidden</option>
                                         <option value="discontinued">Discontinued</option>
                                     </select>
+                                    <div class="form-text">Only Active products appear on the website.</div>
                                 </div>
-                                
+
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label d-block">Options</label>
-                                    <div class="form-check">
+                                    <div class="form-check mt-2">
                                         <input class="form-check-input" type="checkbox" id="featured" name="featured" value="1">
-                                        <label class="form-check-label" for="featured">
-                                            Featured Product
-                                        </label>
+                                        <label class="form-check-label" for="featured">Featured Product</label>
                                     </div>
+                                    <div class="form-text">Highlighted on homepage/featured sections.</div>
                                 </div>
+
                             </div>
                         </div>
-                        
-                        <!-- Color Details Tab -->
+
+                        <!-- ── Color ── -->
                         <div class="tab-pane fade" id="colorInfo">
                             <div class="row">
+
                                 <div class="col-md-6 mb-3">
                                     <label for="color_name" class="form-label">Color Name</label>
-                                    <input type="text" class="form-control" id="color_name" name="color_name" placeholder="e.g., Lemon Yellow, Bright Red">
+                                    <input type="text" class="form-control" id="color_name" name="color_name"
+                                           placeholder="e.g. Lemon Yellow, Bright Red">
+                                    <div class="form-text">Shown below the product name in the grid.</div>
                                 </div>
-                                
+
                                 <div class="col-md-6 mb-3">
                                     <label for="color_code" class="form-label">Color Code (HEX)</label>
                                     <div class="input-group">
                                         <input type="color" class="form-control form-control-color" id="color_code" name="color_code" value="#000000">
-                                        <input type="text" class="form-control" id="color_code_text" placeholder="#000000" maxlength="7">
+                                        <input type="text" class="form-control" id="color_code_text" placeholder="#FFFF00" maxlength="7">
                                     </div>
-                                    <small class="text-muted">HEX color code for display</small>
+                                    <div class="form-text">Renders the colour swatch on product pages.</div>
                                 </div>
-                                
-                                <div class="col-md-12 mb-3">
+
+                                <div class="col-12 mb-3">
                                     <label for="color_index" class="form-label">Color Index</label>
-                                    <input type="text" class="form-control" id="color_index" name="color_index" placeholder="e.g., C.I. Pigment Yellow 1">
+                                    <input type="text" class="form-control" id="color_index" name="color_index"
+                                           placeholder="e.g. C.I. Pigment Yellow 1">
+                                    <div class="form-text">Standard SDC name. Format: <em>C.I. Pigment [Colour] [Number]</em>.</div>
                                 </div>
+
                             </div>
                         </div>
-                        
-                        <!-- Technical Specs Tab -->
+
+                        <!-- ── Tech Specs ── -->
                         <div class="tab-pane fade" id="technicalInfo">
-                            <div class="mb-3">
-                                <label class="form-label">Technical Specifications</label>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Technical Specifications</label>
+                                <div class="text-muted small mb-2">Key-value pairs (e.g. <em>Heat Resistance → 200°C</em>). Shown in the product datasheet section.</div>
                                 <div id="specsContainer">
                                     <div class="row mb-2">
                                         <div class="col-5">
-                                            <input type="text" class="form-control" name="spec_key[]" placeholder="Specification Name">
+                                            <input type="text" class="form-control" name="spec_key[]" placeholder="Property (e.g. Heat Resistance)">
                                         </div>
                                         <div class="col-6">
-                                            <input type="text" class="form-control" name="spec_value[]" placeholder="Value">
+                                            <input type="text" class="form-control" name="spec_value[]" placeholder="Value (e.g. 200°C)">
                                         </div>
                                         <div class="col-1">
                                             <button type="button" class="btn btn-outline-danger" onclick="removeSpec(this)">
@@ -770,100 +803,139 @@ include 'includes/header.php';
                                         </div>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addSpec()">
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-1" onclick="addSpec()">
                                     <i class="fas fa-plus me-1"></i>Add Specification
                                 </button>
                             </div>
-                            
+
                             <div class="mb-3">
-                                <label class="form-label">Applications</label>
+                                <label class="form-label fw-semibold">Applications</label>
+                                <div class="text-muted small mb-2">Industries or use-cases (e.g. <em>Industrial Coatings</em>, <em>Printing Inks</em>). Each appears as a bullet on the product page.</div>
                                 <div id="applicationsContainer">
                                     <div class="input-group mb-2">
-                                        <input type="text" class="form-control" name="applications[]" placeholder="Application area">
+                                        <input type="text" class="form-control" name="applications[]" placeholder="e.g. Industrial Coatings">
                                         <button type="button" class="btn btn-outline-danger" onclick="removeApplication(this)">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addApplication()">
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-1" onclick="addApplication()">
                                     <i class="fas fa-plus me-1"></i>Add Application
                                 </button>
                             </div>
+
                         </div>
-                        
-                        <!-- Media & Files Tab -->
+
+                        <!-- ── Media ── -->
                         <div class="tab-pane fade" id="mediaInfo">
                             <div class="row">
+
                                 <div class="col-12 mb-3">
                                     <label for="image" class="form-label">Main Product Image</label>
-                                    <input type="file" class="form-control" id="image" name="image" accept="image/*" data-preview="imagePreview">
-                                    <small class="text-muted">Max size: 5MB (JPG, PNG, GIF, WebP)</small>
+                                    <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                                    <div class="form-text">Primary image on the product page. Recommended: 600×600 px, max 5 MB (JPG, PNG, WebP).</div>
                                     <div class="mt-2">
-                                        <img id="imagePreview" src="" alt="Preview" style="max-width: 200px; max-height: 200px; display: none; border-radius: 5px;">
+                                        <img id="imagePreview" src="" alt="Preview" style="max-width:200px; max-height:200px; display:none; border-radius:5px; border:1px solid #dee2e6;">
                                     </div>
                                 </div>
-                                
+
                                 <div class="col-12"><hr></div>
-                                
+
                                 <div class="col-md-6 mb-3">
-                                    <label for="pdf_file_1_label" class="form-label">PDF 1 Label</label>
-                                    <input type="text" class="form-control" id="pdf_file_1_label" name="pdf_file_1_label" value="Technical Datasheet">
+                                    <label for="pdf_file_1_label" class="form-label">PDF 1 Button Label</label>
+                                    <input type="text" class="form-control" id="pdf_file_1_label" name="pdf_file_1_label"
+                                           value="Technical Datasheet" placeholder="e.g. Technical Datasheet">
+                                    <div class="form-text">Text shown on the download button (e.g. TDS).</div>
                                 </div>
-                                
+
                                 <div class="col-md-6 mb-3">
                                     <label for="pdf_file_1" class="form-label">PDF File 1</label>
                                     <input type="file" class="form-control" id="pdf_file_1" name="pdf_file_1" accept=".pdf">
-                                    <small class="text-muted">Max size: 10MB (PDF only)</small>
-                                    <div id="pdf1Current" class="mt-2" style="display: none;">
-                                        <small class="text-success"><i class="fas fa-file-pdf"></i> Current file uploaded</small>
+                                    <div class="form-text">Technical Datasheet. PDF only, max 10 MB.</div>
+                                    <div id="pdf1Current" class="mt-1" style="display:none;">
+                                        <small class="text-success"><i class="fas fa-file-pdf me-1"></i>PDF uploaded — upload a new file to replace.</small>
                                     </div>
                                 </div>
-                                
+
                                 <div class="col-md-6 mb-3">
-                                    <label for="pdf_file_2_label" class="form-label">PDF 2 Label</label>
-                                    <input type="text" class="form-control" id="pdf_file_2_label" name="pdf_file_2_label" value="Material Safety Datasheet">
+                                    <label for="pdf_file_2_label" class="form-label">PDF 2 Button Label</label>
+                                    <input type="text" class="form-control" id="pdf_file_2_label" name="pdf_file_2_label"
+                                           value="Material Safety Datasheet" placeholder="e.g. Material Safety Datasheet">
+                                    <div class="form-text">Text shown on the second download button (e.g. MSDS / SDS).</div>
                                 </div>
-                                
+
                                 <div class="col-md-6 mb-3">
                                     <label for="pdf_file_2" class="form-label">PDF File 2</label>
                                     <input type="file" class="form-control" id="pdf_file_2" name="pdf_file_2" accept=".pdf">
-                                    <small class="text-muted">Max size: 10MB (PDF only)</small>
-                                    <div id="pdf2Current" class="mt-2" style="display: none;">
-                                        <small class="text-success"><i class="fas fa-file-pdf"></i> Current file uploaded</small>
+                                    <div class="form-text">Material Safety / SDS document. PDF only, max 10 MB.</div>
+                                    <div id="pdf2Current" class="mt-1" style="display:none;">
+                                        <small class="text-success"><i class="fas fa-file-pdf me-1"></i>PDF uploaded — upload a new file to replace.</small>
                                     </div>
                                 </div>
+
+                                <div class="col-12">
+                                    <div class="alert alert-info py-2 mb-0" style="font-size:0.85rem;">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        <strong>Gallery images</strong> are managed via the <strong><i class="fas fa-images"></i> Manage Images</strong> button after saving.
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
-                        
-                        <!-- SEO Tab -->
+
+                        <!-- ── SEO ── -->
                         <div class="tab-pane fade" id="seoInfo">
                             <div class="row">
+
+                                <div class="col-12 mb-3">
+                                    <div class="alert alert-secondary py-2" style="font-size:0.83rem;">
+                                        <i class="fas fa-search me-1"></i>
+                                        Leave blank to use auto-generated values. Fill in only to override defaults.
+                                    </div>
+                                </div>
+
                                 <div class="col-12 mb-3">
                                     <label for="meta_title" class="form-label">Meta Title</label>
-                                    <input type="text" class="form-control" id="meta_title" name="meta_title">
+                                    <input type="text" class="form-control" id="meta_title" name="meta_title"
+                                           placeholder="e.g. Pigment Yellow 1 (PY-1) | Lemon Yellow | ColourTech"
+                                           maxlength="70">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="form-text">Browser tab &amp; Google headline. Ideal: 50–60 chars.</div>
+                                        <small class="text-muted mt-1" id="metaTitleCount">0 / 60</small>
+                                    </div>
                                 </div>
-                                
+
                                 <div class="col-12 mb-3">
                                     <label for="meta_description" class="form-label">Meta Description</label>
-                                    <textarea class="form-control" id="meta_description" name="meta_description" rows="2"></textarea>
+                                    <textarea class="form-control" id="meta_description" name="meta_description" rows="3"
+                                              placeholder="e.g. ColourTech Pigment Yellow 1 (PY-1) — high-performance lemon yellow azo pigment for paints and coatings."
+                                              maxlength="165"></textarea>
+                                    <div class="d-flex justify-content-between">
+                                        <div class="form-text">Google snippet text. Ideal: 140–160 chars.</div>
+                                        <small class="text-muted mt-1" id="metaDescCount">0 / 160</small>
+                                    </div>
                                 </div>
-                                
+
                                 <div class="col-12 mb-3">
                                     <label for="meta_keywords" class="form-label">Meta Keywords</label>
-                                    <input type="text" class="form-control" id="meta_keywords" name="meta_keywords">
-                                    <small class="text-muted">Comma-separated keywords</small>
+                                    <input type="text" class="form-control" id="meta_keywords" name="meta_keywords"
+                                           placeholder="e.g. Pigment Yellow 1, PY-1, lemon yellow, azo pigment">
+                                    <div class="form-text">Comma-separated. Include C.I. name, code, colour, and application.</div>
                                 </div>
+
                             </div>
                         </div>
-                    </div>
-                </div>
-                
+
+                    </div><!-- /tab-content -->
+                </div><!-- /modal-body -->
+
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-2"></i>Save Product
                     </button>
                 </div>
+
             </form>
         </div>
     </div>
@@ -1287,6 +1359,23 @@ function setPrimary(imageId, productId) {
     document.getElementById('primaryProductId').value = productId;
     document.getElementById('setPrimaryForm').submit();
 }
+    // SEO character counters
+(function() {
+    function bindCounter(inputId, counterId, limit) {
+        const el = document.getElementById(inputId);
+        const counter = document.getElementById(counterId);
+        if (!el || !counter) return;
+        function update() {
+            const len = el.value.length;
+            counter.textContent = len + ' / ' + limit;
+            counter.style.color = len > limit ? '#dc3545' : (len >= limit * 0.85 ? '#fd7e14' : '#6c757d');
+        }
+        el.addEventListener('input', update);
+        update();
+    }
+    bindCounter('meta_title',       'metaTitleCount', 60);
+    bindCounter('meta_description', 'metaDescCount',  160);
+})();
 </script>
 EOD;
 

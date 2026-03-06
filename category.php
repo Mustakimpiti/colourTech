@@ -1,16 +1,17 @@
 <?php
+// ─── Page identity ────────────────────────────────────────────────────────────
 $currentPage = 'product';
 
-// Get slug from URL
+// ─── Slug validation ──────────────────────────────────────────────────────────
 $slug = isset($_GET['slug']) ? trim($_GET['slug']) : '';
 if (empty($slug)) {
     header('Location: index.php');
     exit;
 }
 
-include 'header.php';
+require_once __DIR__ . '/includes/db.php'; // adjust if needed
 
-// Fetch category
+// ─── Fetch category ───────────────────────────────────────────────────────────
 $catStmt = $pdo->prepare("SELECT * FROM categories WHERE slug = ? AND status = 'active'");
 $catStmt->execute([$slug]);
 $category = $catStmt->fetch();
@@ -20,16 +21,42 @@ if (!$category) {
 }
 
 $categoryName = html_entity_decode($category['name']);
-$categoryId = $category['id'];
+$categoryId   = $category['id'];
 
-// Fetch sub-categories with their primary image
+// ─── Meta tags — DB values with smart fallbacks ───────────────────────────────
+$metaTitle = !empty($category['meta_title'])
+    ? $category['meta_title']
+    : $categoryName . ' Pigments | ColourTech Industries';
+
+$metaDescription = !empty($category['meta_description'])
+    ? $category['meta_description']
+    : (!empty($category['description'])
+        ? substr(strip_tags(html_entity_decode($category['description'])), 0, 160)
+        : 'Explore ColourTech Industries\' premium ' . $categoryName . ' pigments — trusted quality for global markets.');
+
+$metaKeywords = !empty($category['meta_keywords'])
+    ? $category['meta_keywords']
+    : $categoryName . ' pigments, ColourTech Industries, pigment manufacturer, industrial pigments';
+
+// ─── OG image ─────────────────────────────────────────────────────────────────
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$baseUrl  = $protocol . '://' . $_SERVER['HTTP_HOST'];
+
+$metaOgImage = !empty($category['image'])
+    ? $baseUrl . '/admin/uploads/categories/' . $category['image']
+    : $baseUrl . '/assets/imgs/og-default.jpg';
+
+// ─── Include header (meta vars must be set before this) ───────────────────────
+include 'header.php';
+
+// ─── Fetch sub-categories with their primary image ────────────────────────────
 $subStmt = $pdo->prepare("
-    SELECT 
+    SELECT
         sc.*,
         sci.image_path AS primary_image
     FROM sub_categories sc
-    LEFT JOIN sub_category_images sci 
-        ON sci.sub_category_id = sc.id 
+    LEFT JOIN sub_category_images sci
+        ON sci.sub_category_id = sc.id
         AND sci.is_primary = 1
     WHERE sc.category_id = ? AND sc.status = 'active'
     ORDER BY sc.sort_order ASC
@@ -37,16 +64,16 @@ $subStmt = $pdo->prepare("
 $subStmt->execute([$categoryId]);
 $subCategories = $subStmt->fetchAll();
 
-// Breadcrumb background
+// ─── Breadcrumb background ────────────────────────────────────────────────────
 $breadcrumbBg = !empty($category['image'])
     ? 'admin/uploads/categories/' . $category['image']
     : 'assets/imgs/breadcrumb/paint-coating.jpg';
 ?>
 
 <main>
-    <!-- Breadcrumb area start -->
-    <div
-        class="breadcrumb__area header__background-color breadcrumb__header-up breadcrumb-space overly overflow-hidden">
+
+    <!-- ─── Breadcrumb ───────────────────────────────────────────────────────── -->
+    <div class="breadcrumb__area header__background-color breadcrumb__header-up breadcrumb-space overly overflow-hidden">
         <div class="breadcrumb__background" data-background="<?php echo htmlspecialchars($breadcrumbBg); ?>"></div>
         <div class="container">
             <div class="breadcrumb__bg-left"></div>
@@ -70,9 +97,9 @@ $breadcrumbBg = !empty($category['image'])
             </div>
         </div>
     </div>
-    <!-- Breadcrumb area end -->
+    <!-- Breadcrumb end -->
 
-    <!-- Sub-categories area start -->
+    <!-- ─── Sub-categories grid ──────────────────────────────────────────────── -->
     <section class="about-us section-space">
         <div class="container">
             <div class="row">
@@ -82,80 +109,78 @@ $breadcrumbBg = !empty($category['image'])
                     </h2>
                 </div>
             </div>
+
             <div class="row">
                 <div class="col-xl-12">
-                    <div>
-                        <div>
-                            <?php if (!empty($subCategories)): ?>
-                                <div class="row">
-                                    <?php foreach ($subCategories as $index => $sub):
-                                        $subName = html_entity_decode($sub['name']);
-                                        $subNumber = str_pad($index + 1, 2, '0', STR_PAD_LEFT);
-                                        $subLink = 'sub-category.php?slug=' . urlencode($sub['slug']);
-
-                                        if (!empty($sub['primary_image'])) {
-                                            $imgSrc = 'admin/uploads/sub-categories/' . $sub['primary_image'];
-                                        } else {
-                                            $imgSrc = 'assets/imgs/products/placeholder.jpg';
-                                        }
-                                        ?>
-                                        <div class="col-md-6 col-lg-4 col-xl-4" style="padding-top: 30px;">
-                                            <div class="projects__item">
-                                                <div class="has--overlay"></div>
-                                                <div class="has--overlay-2"></div>
-                                                <div class="projects__media">
-                                                    <img src="<?php echo htmlspecialchars($imgSrc); ?>"
-                                                        alt="<?php echo htmlspecialchars($subName); ?>"
-                                                        style="width:100%; height:100%; object-fit:cover;">
-                                                </div>
-
-                                                <div class="projects__text-top">
-                                                    <h2><?php echo $subNumber; ?></h2>
-                                                    <h6><a
-                                                            href="<?php echo $subLink; ?>"><?php echo htmlspecialchars($subName); ?></a>
-                                                    </h6>
-                                                </div>
-                                                <div class="projects__text-bottom">
-                                                    <h2><?php echo $subNumber; ?></h2>
-                                                    <h6><a
-                                                            href="<?php echo $subLink; ?>"><?php echo htmlspecialchars($subName); ?></a>
-                                                    </h6>
-                                                </div>
-
-                                                <a class="projects__arrow" href="<?php echo $subLink; ?>">
-                                                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                                                        xmlns="http://www.w3.org/2000/svg">
-                                                        <path d="M1 8.00018H15" stroke="#906E50" stroke-width="1.5"
-                                                            stroke-linecap="round" stroke-linejoin="round" />
-                                                        <path d="M8 1.00018L15 8.00018L8 15.0002" stroke="#906E50"
-                                                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-                                                    </svg>
-                                                </a>
-                                            </div>
+                    <?php if (!empty($subCategories)): ?>
+                        <div class="row">
+                            <?php foreach ($subCategories as $index => $sub):
+                                $subName   = html_entity_decode($sub['name']);
+                                $subNumber = str_pad($index + 1, 2, '0', STR_PAD_LEFT);
+                                $subLink   = 'sub-category.php?slug=' . urlencode($sub['slug']);
+                                $imgSrc    = !empty($sub['primary_image'])
+                                    ? 'admin/uploads/sub-categories/' . $sub['primary_image']
+                                    : 'assets/imgs/products/placeholder.jpg';
+                            ?>
+                                <div class="col-md-6 col-lg-4 col-xl-4" style="padding-top:30px;">
+                                    <div class="projects__item">
+                                        <div class="has--overlay"></div>
+                                        <div class="has--overlay-2"></div>
+                                        <div class="projects__media">
+                                            <img src="<?php echo htmlspecialchars($imgSrc); ?>"
+                                                 alt="<?php echo htmlspecialchars($subName); ?>"
+                                                 style="width:100%; height:100%; object-fit:cover;">
                                         </div>
-                                    <?php endforeach; ?>
-                                </div>
 
-                            <?php else: ?>
-                                <div class="row">
-                                    <div class="col-12 text-center py-5">
-                                        <p style="font-size: 1.2rem; color: #666;">No sub-categories found.</p>
-                                        <a href="index.php" class="rr-btn mt-30">
-                                            <span class="btn-wrap">
-                                                <span class="text-one">Back to Home</span>
-                                                <span class="text-two">Back to Home</span>
-                                            </span>
+                                        <div class="projects__text-top">
+                                            <h2><?php echo $subNumber; ?></h2>
+                                            <h6>
+                                                <a href="<?php echo $subLink; ?>">
+                                                    <?php echo htmlspecialchars($subName); ?>
+                                                </a>
+                                            </h6>
+                                        </div>
+                                        <div class="projects__text-bottom">
+                                            <h2><?php echo $subNumber; ?></h2>
+                                            <h6>
+                                                <a href="<?php echo $subLink; ?>">
+                                                    <?php echo htmlspecialchars($subName); ?>
+                                                </a>
+                                            </h6>
+                                        </div>
+
+                                        <a class="projects__arrow" href="<?php echo $subLink; ?>">
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M1 8.00018H15" stroke="#906E50" stroke-width="1.5"
+                                                      stroke-linecap="round" stroke-linejoin="round"/>
+                                                <path d="M8 1.00018L15 8.00018L8 15.0002" stroke="#906E50"
+                                                      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
                                         </a>
                                     </div>
                                 </div>
-                            <?php endif; ?>
+                            <?php endforeach; ?>
                         </div>
-                    </div>
+
+                    <?php else: ?>
+                        <div class="row">
+                            <div class="col-12 text-center py-5">
+                                <p style="font-size:1.2rem; color:#666;">No sub-categories found.</p>
+                                <a href="index.php" class="rr-btn mt-30">
+                                    <span class="btn-wrap">
+                                        <span class="text-one">Back to Home</span>
+                                        <span class="text-two">Back to Home</span>
+                                    </span>
+                                </a>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
     </section>
-    <!-- Sub-categories area end -->
+
 </main>
 
 <?php include 'footer.php'; ?>
